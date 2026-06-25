@@ -29,3 +29,6 @@ npm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# raw working images (kept on disk, not deployed)
+public/img/_source/
