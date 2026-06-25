@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import ComingSoon from "@/components/ComingSoon.tsx";
+---
+
+<Layout title="B-BUCKETS — Coming Soon">
+  {/* client:load hydrates this island as soon as the page loads so the
+      entrance animation plays. Everything else stays static HTML. */}
+  <ComingSoon client:load />
+</Layout>

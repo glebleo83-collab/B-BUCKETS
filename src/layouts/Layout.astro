@@ -1,0 +1,30 @@
+---
+// The base HTML shell every page reuses. `title` and `description` are passed
+// in per-page so each page controls its own <head> for SEO.
+import "@/styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "B-BUCKETS",
+  description = "B-BUCKETS — coming soon.",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/img/brand/logo-transparent.png" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body class="min-h-screen antialiased">
+    <slot />
+  </body>
+</html>
