@@ -1,10 +1,74 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import ComingSoon from "@/components/ComingSoon.tsx";
+import Hero from "@/components/Hero.tsx";
+import WaitlistForm from "@/components/WaitlistForm.tsx";
+import ScrollCompanion from "@/components/ScrollCompanion.tsx";
+
+const year = new Date().getFullYear();
 ---
 
-<Layout title="B-BUCKETS — Coming Soon">
-  {/* client:load hydrates this island as soon as the page loads so the
-      entrance animation plays. Everything else stays static HTML. */}
-  <ComingSoon client:load />
+<Layout title="B-BUCKETS — Buckets Incoming">
+  {/* ---- Header: logo + recurring tagline ---- */}
+  <header
+    class="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-6 py-5 sm:px-10"
+  >
+    <img
+      src="/img/brand/logo-transparent.png"
+      alt="B-BUCKETS logo"
+      class="h-8 w-auto"
+      width="48"
+      height="32"
+    />
+    <span
+      class="text-xs font-semibold tracking-[0.3em] text-muted-foreground uppercase"
+    >
+      Get buckets.
+    </span>
+  </header>
+
+  {/* client:load — hydrate immediately so the entrance animation plays. */}
+  <Hero client:load />
+
+  {/* ---- Waitlist ---- */}
+  <section
+    id="waitlist"
+    class="flex min-h-[90svh] items-center justify-center border-t border-border px-6 py-24 sm:px-10"
+  >
+    <div class="w-full max-w-md text-center">
+      <p
+        class="mb-4 text-xs font-medium tracking-[0.4em] text-muted-foreground uppercase"
+      >
+        The waitlist
+      </p>
+      <h2 class="text-4xl font-bold tracking-tight sm:text-5xl">Get buckets.</h2>
+      <p class="mx-auto mt-4 mb-10 max-w-sm text-muted-foreground">
+        Join the list and we&rsquo;ll email you the second drop one lands.
+      </p>
+
+      {/* client:visible — only hydrate the form when scrolled into view. */}
+      <WaitlistForm client:visible />
+    </div>
+  </section>
+
+  {/* ---- Footer ---- */}
+  <footer
+    class="flex flex-col items-center gap-4 border-t border-border px-6 py-12 text-center sm:flex-row sm:justify-between sm:text-left"
+  >
+    <img
+      src="/img/brand/logo-transparent.png"
+      alt="B-BUCKETS logo"
+      class="h-7 w-auto"
+      width="42"
+      height="28"
+    />
+    <p class="text-xs tracking-[0.25em] text-muted-foreground uppercase">
+      Get buckets.
+    </p>
+    <p class="text-xs text-muted-foreground">
+      &copy; {year} B-BUCKETS. All rights reserved.
+    </p>
+  </footer>
+
+  {/* client:load — listens to scroll to reveal itself. */}
+  <ScrollCompanion client:load />
 </Layout>

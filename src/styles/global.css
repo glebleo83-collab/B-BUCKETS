@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Self-hosted geometric/techy sans — bundled at build time, no external call. */
+@import "@fontsource-variable/space-grotesk";
 
 /* Tells Tailwind that `.dark` on a parent turns on dark-mode utilities. */
 @custom-variant dark (&:is(.dark *));
@@ -55,6 +57,9 @@
 
 /* Maps the CSS variables above to Tailwind color utilities like `bg-background`. */
 @theme inline {
+  /* Makes `font-sans` (the default) use Space Grotesk everywhere. */
+  --font-sans:
+    "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -86,5 +91,6 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family: var(--font-sans);
   }
 }
