@@ -1,88 +1,132 @@
 import { motion, useReducedMotion } from "motion/react";
 
-// The headline is split into words so each one can animate in on its own.
-const HEADLINE = ["BUCKETS", "INCOMING"];
-
-// A shared easing curve (a smooth "ease-out-expo") so all hero motion feels
-// like one family. [x1,y1,x2,y2] is a cubic-bezier curve.
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// A handful of embers drifting up over the hero for extra fire energy.
+const EMBERS = [
+  { left: "12%", size: 6, dur: 7, delay: 0 },
+  { left: "28%", size: 4, dur: 9, delay: 1.5 },
+  { left: "44%", size: 8, dur: 6, delay: 0.8 },
+  { left: "63%", size: 5, dur: 8, delay: 2.2 },
+  { left: "78%", size: 7, dur: 7.5, delay: 1 },
+  { left: "90%", size: 4, dur: 10, delay: 3 },
+];
+
 export default function Hero() {
-  // When the visitor asks their OS for less motion, skip the endless float.
   const reduce = useReducedMotion();
+
   return (
-    <section className="relative flex min-h-[100svh] items-center overflow-hidden px-6 pt-28 pb-20 sm:px-10">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 md:grid-cols-2">
-        {/* ---- Left: the words ---- */}
-        <div className="order-2 md:order-1">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: EASE }}
-            className="mb-5 text-xs font-medium tracking-[0.4em] text-muted-foreground uppercase"
-          >
-            Coming soon
-          </motion.p>
+    <section className="relative flex min-h-[100svh] items-center overflow-hidden">
+      {/* ---- Background: video if present, the still as poster otherwise ---- */}
+      <video
+        className="absolute inset-0 h-full w-full object-cover"
+        poster="/img/hero/hero-scene.webp"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+      >
+        <source src="/img/hero/hero.mp4" type="video/mp4" />
+      </video>
 
-          <h1 className="text-6xl leading-[0.88] font-bold tracking-tight sm:text-7xl lg:text-8xl">
-            {HEADLINE.map((word, i) => (
-              <motion.span
-                key={word}
-                className="block"
-                initial={{ opacity: 0, y: 28 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.15 + i * 0.12, ease: EASE }}
-              >
-                {word}
-              </motion.span>
-            ))}
-          </h1>
+      {/* Dark scrim so the headline stays readable over the flames. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-background/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40" />
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
-            className="mt-6 max-w-md text-base text-muted-foreground sm:text-lg"
-          >
-            Greatest of all time. Drop one is almost here.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.65, ease: EASE }}
-            className="mt-9"
-          >
-            <a
-              href="#waitlist"
-              className="group inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-4 text-sm font-semibold tracking-wide text-background transition hover:opacity-90"
-            >
-              I want in
-              <span className="transition-transform group-hover:translate-x-1">
-                &rarr;
-              </span>
-            </a>
-          </motion.div>
+      {/* Floating embers */}
+      {!reduce && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {EMBERS.map((e, i) => (
+            <span
+              key={i}
+              className="animate-ember absolute bottom-24 rounded-full bg-primary"
+              style={{
+                left: e.left,
+                width: e.size,
+                height: e.size,
+                animationDuration: `${e.dur}s`,
+                animationDelay: `${e.delay}s`,
+                boxShadow: "0 0 12px 2px var(--brand-red)",
+              }}
+            />
+          ))}
         </div>
+      )}
 
-        {/* ---- Right: the mascot ---- */}
-        <motion.div
-          className="order-1 flex justify-center md:order-2"
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: EASE }}
+      {/* ---- Foreground content ---- */}
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-28 sm:px-10">
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: EASE }}
+          className="mb-5 text-xs font-semibold tracking-[0.4em] text-primary uppercase"
         >
-          {/* The outer div fades/scales in once; the inner img floats forever. */}
-          <motion.img
-            src="/img/brand/mascot-hero.webp"
-            alt="The B-BUCKETS goat mascot — the G.O.A.T. — in sunglasses, wearing a BB monogram tee and chunky sneakers"
-            className="w-[260px] select-none drop-shadow-2xl sm:w-[340px] lg:w-[440px]"
-            draggable={false}
-            animate={reduce ? undefined : { y: [0, -16, 0] }}
-            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-          />
+          The first drop is loading
+        </motion.p>
+
+        <h1 className="text-6xl leading-[0.85] font-extrabold tracking-tight sm:text-8xl lg:text-9xl">
+          <motion.span
+            className="block"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.12, ease: EASE }}
+          >
+            BUCKETS
+          </motion.span>
+          <motion.span
+            className="text-fire fire-text-glow block"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.24, ease: EASE }}
+          >
+            INCOMING
+          </motion.span>
+        </h1>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
+          className="mt-6 max-w-md text-base text-muted-foreground sm:text-lg"
+        >
+          Greatest of all time. Drop one is almost here.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7, ease: EASE }}
+          className="mt-9 flex flex-wrap items-center gap-4"
+        >
+          <a
+            href="#drop"
+            className="fire-glow group inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-sm font-bold tracking-wide text-primary-foreground transition hover:brightness-110"
+          >
+            See the drop
+            <span className="transition-transform group-hover:translate-x-1">
+              &rarr;
+            </span>
+          </a>
+          <a
+            href="#goat"
+            className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-sm font-semibold tracking-wide text-foreground transition hover:bg-secondary"
+          >
+            Meet the G.O.A.T.
+          </a>
         </motion.div>
       </div>
+
+      {/* Scroll cue */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 1.1 }}
+        className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-[10px] tracking-[0.3em] text-muted-foreground uppercase"
+      >
+        Scroll
+      </motion.div>
     </section>
   );
 }

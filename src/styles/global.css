@@ -13,25 +13,27 @@
    updates. Colors use oklch() (perceptually even, the modern CSS standard).
 --------------------------------------------------------------------------- */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+  /* B-BUCKETS fire palette: deep black, vivid brand red, white. */
+  --background: oklch(0.14 0.012 25); /* near-black, faint warm */
+  --foreground: oklch(0.98 0 0); /* white */
+  --card: oklch(0.18 0.015 25);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.18 0.015 25);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.585 0.243 27); /* vivid brand red */
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.24 0.02 25);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.24 0.015 25);
+  --muted-foreground: oklch(0.74 0.02 25);
+  --accent: oklch(0.585 0.243 27);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.7 0.2 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.585 0.243 27);
+  --brand-red: oklch(0.6 0.245 27);
 }
 
 .dark {
@@ -78,6 +80,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand-red: var(--brand-red);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -92,5 +95,97 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ---- Fire helper classes (B-BUCKETS brand flair) ---- */
+@layer utilities {
+  /* Red gradient clipped to text — for big fiery headlines. */
+  .text-fire {
+    background-image: linear-gradient(
+      180deg,
+      #ff6a45 0%,
+      #ec1c24 52%,
+      #a10008 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Soft red glow behind an element. */
+  .fire-glow {
+    box-shadow: 0 0 60px -12px oklch(0.6 0.245 27 / 0.75);
+  }
+  .fire-text-glow {
+    text-shadow: 0 0 30px oklch(0.6 0.245 27 / 0.5);
+  }
+  /* Radial ember wash, e.g. behind the mascot. */
+  .bg-ember {
+    background-image: radial-gradient(
+      circle at 50% 115%,
+      oklch(0.5 0.23 27 / 0.55),
+      transparent 62%
+    );
+  }
+}
+
+/* ---- Scroll-reveal: elements fade/slide up when they enter the screen.
+   A tiny IntersectionObserver (in index.astro) adds .is-visible. ---- */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Gentle endless float for the mascot image. */
+@keyframes bb-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+}
+.animate-float {
+  animation: bb-float 5s ease-in-out infinite;
+}
+
+/* Rising ember particle. */
+@keyframes bb-ember {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-220px) scale(0.3);
+    opacity: 0;
+  }
+}
+.animate-ember {
+  animation: bb-ember linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .animate-float,
+  .animate-ember {
+    animation: none;
   }
 }

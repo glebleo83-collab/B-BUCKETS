@@ -1,52 +1,215 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import Hero from "@/components/Hero.tsx";
-import WaitlistForm from "@/components/WaitlistForm.tsx";
-import ScrollCompanion from "@/components/ScrollCompanion.tsx";
+import Countdown from "@/components/Countdown.tsx";
 
 const year = new Date().getFullYear();
+
+// 🔧 EDIT ME: the real drop date/time (Pacific). Change this one line when you
+// know your launch day — the countdown updates automatically.
+const DROP_DATE = "2026-08-08T10:00:00-07:00";
+
+// 🔧 EDIT ME: product names/labels are placeholders — rename freely.
+const products = [
+  {
+    name: "Flame Sneakers",
+    tag: "Footwear",
+    img: "/img/products/shoes.webp",
+  },
+  { name: "BB Ringer Tee", tag: "Apparel", img: "/img/products/tee.webp" },
+  {
+    name: "Flame Sweatpants",
+    tag: "Apparel",
+    img: "/img/products/sweatpants.webp",
+  },
+];
 ---
 
 <Layout title="B-BUCKETS — Buckets Incoming">
-  {/* ---- Header: logo + recurring tagline ---- */}
+  {/* ---- Header ---- */}
   <header
-    class="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-6 py-5 sm:px-10"
+    class="fixed inset-x-0 top-0 z-40 flex items-center justify-between bg-gradient-to-b from-background/90 to-transparent px-6 py-4 backdrop-blur-sm sm:px-10"
   >
-    <img
-      src="/img/brand/logo-transparent.png"
-      alt="B-BUCKETS logo"
-      class="h-8 w-auto"
-      width="48"
-      height="32"
-    />
-    <span
-      class="text-xs font-semibold tracking-[0.3em] text-muted-foreground uppercase"
-    >
-      Get buckets.
-    </span>
+    <a href="#top" class="flex items-center gap-3">
+      <img
+        src="/img/brand/logo-transparent.png"
+        alt="B-BUCKETS logo"
+        class="h-8 w-auto invert"
+        width="48"
+        height="32"
+      />
+    </a>
+    <nav class="flex items-center gap-6 text-xs font-semibold tracking-[0.2em] uppercase">
+      <a href="#goat" class="hidden text-muted-foreground transition hover:text-foreground sm:inline">The G.O.A.T.</a>
+      <a href="#gear" class="hidden text-muted-foreground transition hover:text-foreground sm:inline">The Gear</a>
+      <a href="#drop" class="text-primary transition hover:brightness-110">The Drop &darr;</a>
+    </nav>
   </header>
 
-  {/* client:load — hydrate immediately so the entrance animation plays. */}
+  <span id="top"></span>
+
+  {/* ---- Hero ---- */}
   <Hero client:load />
 
-  {/* ---- Waitlist ---- */}
-  <section
-    id="waitlist"
-    class="flex min-h-[90svh] items-center justify-center border-t border-border px-6 py-24 sm:px-10"
-  >
-    <div class="w-full max-w-md text-center">
+  {/* ---- Brand story ---- */}
+  <section id="story" class="relative overflow-hidden px-6 py-28 sm:px-10">
+    <div class="mx-auto max-w-4xl text-center">
       <p
-        class="mb-4 text-xs font-medium tracking-[0.4em] text-muted-foreground uppercase"
+        data-reveal
+        class="mb-5 text-xs font-semibold tracking-[0.4em] text-primary uppercase"
       >
-        The waitlist
+        What we stand for
       </p>
-      <h2 class="text-4xl font-bold tracking-tight sm:text-5xl">Get buckets.</h2>
-      <p class="mx-auto mt-4 mb-10 max-w-sm text-muted-foreground">
-        Join the list and we&rsquo;ll email you the second drop one lands.
+      <h2
+        data-reveal
+        class="text-4xl font-extrabold tracking-tight sm:text-6xl"
+      >
+        GREATNESS ISN&rsquo;T GIVEN.<br />
+        <span class="text-fire fire-text-glow">IT&rsquo;S TAKEN.</span>
+      </h2>
+      <p
+        data-reveal
+        class="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground"
+      >
+        B-BUCKETS is for the ones who chase it — on the court, in the streets,
+        every single day. No shortcuts, no excuses. You put in the work, you get
+        the buckets. Be the G.O.A.T.
+      </p>
+    </div>
+  </section>
+
+  {/* ---- Meet the G.O.A.T. ---- */}
+  <section
+    id="goat"
+    class="relative overflow-hidden border-y border-border px-6 py-28 sm:px-10"
+  >
+    <div
+      class="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2"
+    >
+      <div data-reveal class="relative flex justify-center">
+        <div class="bg-ember absolute inset-0 scale-125"></div>
+        <img
+          src="/img/brand/goat-color.webp"
+          alt="The B-BUCKETS mascot — a goat in red and black flame B-BUCKETS gear holding a basketball"
+          class="animate-float relative w-[280px] drop-shadow-2xl sm:w-[360px]"
+          width="360"
+          height="540"
+          loading="lazy"
+        />
+      </div>
+      <div>
+        <p
+          data-reveal
+          class="mb-4 text-xs font-semibold tracking-[0.4em] text-primary uppercase"
+        >
+          Meet the mascot
+        </p>
+        <h2
+          data-reveal
+          class="text-4xl font-extrabold tracking-tight sm:text-6xl"
+        >
+          THE <span class="text-fire fire-text-glow">G.O.A.T.</span>
+        </h2>
+        <p data-reveal class="mt-6 text-lg text-muted-foreground">
+          Greatest Of All Time. Our goat doesn&rsquo;t chase the hype — it
+          <span class="font-semibold text-foreground"> is </span>
+          the hype. Cold, confident, and always getting buckets. It reps the
+          flames head to toe, just like you will.
+        </p>
+        <p
+          data-reveal
+          class="mt-8 text-sm font-bold tracking-[0.25em] text-primary uppercase"
+        >
+          Get buckets.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {/* ---- The Gear ---- */}
+  <section id="gear" class="px-6 py-28 sm:px-10">
+    <div class="mx-auto max-w-6xl">
+      <div class="mb-14 text-center">
+        <p
+          data-reveal
+          class="mb-4 text-xs font-semibold tracking-[0.4em] text-primary uppercase"
+        >
+          First drop
+        </p>
+        <h2
+          data-reveal
+          class="text-4xl font-extrabold tracking-tight sm:text-6xl"
+        >
+          THE <span class="text-fire fire-text-glow">GEAR</span>
+        </h2>
+      </div>
+
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          products.map((p) => (
+            <article
+              data-reveal
+              class="group relative overflow-hidden rounded-3xl border border-border bg-card transition duration-300 hover:-translate-y-2 hover:border-primary/60 hover:shadow-[0_20px_60px_-20px_var(--brand-red)]"
+            >
+              <div class="aspect-square overflow-hidden bg-secondary/40">
+                <img
+                  src={p.img}
+                  alt={p.name}
+                  class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  width="800"
+                  height="800"
+                  loading="lazy"
+                />
+              </div>
+              <div class="flex items-center justify-between p-5">
+                <div>
+                  <h3 class="text-lg font-bold">{p.name}</h3>
+                  <p class="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                    {p.tag}
+                  </p>
+                </div>
+                <span class="rounded-full border border-primary/40 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-primary uppercase">
+                  Soon
+                </span>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  {/* ---- The Drop / Countdown (the main moment) ---- */}
+  <section
+    id="drop"
+    class="relative overflow-hidden border-t border-border px-6 py-32 sm:px-10"
+  >
+    <div class="bg-ember absolute inset-x-0 bottom-0 h-2/3"></div>
+    <div class="relative mx-auto max-w-3xl text-center">
+      <p
+        data-reveal
+        class="mb-4 text-xs font-semibold tracking-[0.4em] text-primary uppercase"
+      >
+        Mark your calendar
+      </p>
+      <h2
+        data-reveal
+        class="text-5xl font-extrabold tracking-tight sm:text-7xl"
+      >
+        THE <span class="text-fire fire-text-glow">DROP</span>
+      </h2>
+      <p data-reveal class="mx-auto mt-5 mb-12 max-w-md text-muted-foreground">
+        Drop One lands soon. When the clock hits zero, it&rsquo;s go time.
       </p>
 
-      {/* client:visible — only hydrate the form when scrolled into view. */}
-      <WaitlistForm client:visible />
+      <Countdown client:visible target={DROP_DATE} />
+
+      <p
+        data-reveal
+        class="mt-12 text-sm font-bold tracking-[0.3em] text-foreground uppercase"
+      >
+        Be ready. Get buckets.
+      </p>
     </div>
   </section>
 
@@ -57,7 +220,7 @@ const year = new Date().getFullYear();
     <img
       src="/img/brand/logo-transparent.png"
       alt="B-BUCKETS logo"
-      class="h-7 w-auto"
+      class="h-7 w-auto invert"
       width="42"
       height="28"
     />
@@ -69,6 +232,20 @@ const year = new Date().getFullYear();
     </p>
   </footer>
 
-  {/* client:load — listens to scroll to reveal itself. */}
-  <ScrollCompanion client:load />
+  {/* Scroll-reveal: reveal [data-reveal] elements as they enter the viewport. */}
+  <script>
+    const els = document.querySelectorAll("[data-reveal]");
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            obs.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.12 },
+    );
+    els.forEach((el) => obs.observe(el));
+  </script>
 </Layout>
