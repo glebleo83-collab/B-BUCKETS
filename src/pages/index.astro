@@ -96,7 +96,6 @@ const products = [
       class="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2"
     >
       <div data-reveal class="relative flex justify-center">
-        <div class="bg-ember absolute inset-0 scale-125"></div>
         <img
           src="/img/brand/goat-color.webp"
           alt="The B-BUCKETS mascot — a goat in red and black flame B-BUCKETS gear holding a basketball"
@@ -197,6 +196,33 @@ const products = [
           ))
         }
       </div>
+    </div>
+  </section>
+
+  {/* ---- The G.O.A.T. in action (animated) ---- */}
+  <section class="relative overflow-hidden">
+    <video
+      class="h-[60svh] w-full object-cover sm:h-[80svh]"
+      poster="/img/hero/goat-action.webp"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-label="The B-BUCKETS goat shooting a basketball"
+    >
+      <source src="/img/hero/goat-action.mp4" type="video/mp4" />
+    </video>
+    <div
+      class="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute inset-x-0 bottom-8 text-center"
+    >
+      <p data-reveal class="text-4xl font-extrabold tracking-tight sm:text-6xl">
+        NOTHING BUT <span class="text-fire fire-text-glow">BUCKETS.</span>
+      </p>
     </div>
   </section>
 
