@@ -93,6 +93,24 @@
   }
   body {
     background-color: var(--background);
+    /* Layered red glows for an overall fiery gradient wash. */
+    background-image:
+      radial-gradient(
+        1200px 620px at 50% -8%,
+        oklch(0.32 0.13 27 / 0.38),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 520px at 105% 108%,
+        oklch(0.3 0.14 27 / 0.3),
+        transparent 55%
+      ),
+      radial-gradient(
+        800px 500px at -5% 60%,
+        oklch(0.28 0.12 27 / 0.22),
+        transparent 55%
+      );
+    background-attachment: fixed;
     color: var(--foreground);
     font-family: var(--font-sans);
   }
