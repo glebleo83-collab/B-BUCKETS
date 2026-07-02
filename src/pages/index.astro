@@ -9,25 +9,72 @@ const year = new Date().getFullYear();
 // know your launch day — the countdown updates automatically.
 const DROP_DATE = "2026-08-08T10:00:00-07:00";
 
-// 🔧 EDIT ME: product names/labels are placeholders — rename freely.
+// 🔧 EDIT ME: names are placeholders. `model` = 3D file (null until generated).
+// `saying` = the secret line revealed in the 3D popup.
 const products = [
-  { name: "Flame Sneakers", tag: "Footwear", img: "/img/products/shoes.webp" },
-  { name: "Flame Hoodie", tag: "Apparel", img: "/img/products/hoodie.webp" },
-  { name: "BB Ringer Tee", tag: "Apparel", img: "/img/products/tee.webp" },
-  { name: "Flame Shorts", tag: "Apparel", img: "/img/products/shorts.webp" },
+  {
+    name: "Flame Sneakers",
+    tag: "Footwear",
+    img: "/img/products/shoes.webp",
+    model: null,
+    saying: "Where greatness starts.",
+  },
+  {
+    name: "Flame Hoodie",
+    tag: "Apparel",
+    img: "/img/products/hoodie.webp",
+    model: "/models/hoodie.glb",
+    saying: "This is not a hoodie. This is armor.",
+  },
+  {
+    name: "BB Ringer Tee",
+    tag: "Apparel",
+    img: "/img/products/tee.webp",
+    model: null,
+    saying: "Certified bucket-getter.",
+  },
+  {
+    name: "Flame Shorts",
+    tag: "Apparel",
+    img: "/img/products/shorts.webp",
+    model: null,
+    saying: "Legs of a legend.",
+  },
   {
     name: "Flame Sweatpants",
     tag: "Apparel",
     img: "/img/products/sweatpants.webp",
+    model: null,
+    saying: "Comfort is earned.",
   },
-  { name: "BB Bucket Hat", tag: "Headwear", img: "/img/products/hat.webp" },
-  { name: "Flame Socks", tag: "Apparel", img: "/img/products/socks.webp" },
+  {
+    name: "BB Bucket Hat",
+    tag: "Headwear",
+    img: "/img/products/hat.webp",
+    model: null,
+    saying: "Crown of the G.O.A.T.",
+  },
+  {
+    name: "Flame Socks",
+    tag: "Apparel",
+    img: "/img/products/socks.webp",
+    model: null,
+    saying: "Grounded greatness.",
+  },
   {
     name: "BB Bracelets",
     tag: "Accessories",
     img: "/img/products/bracelets.webp",
+    model: null,
+    saying: "Greatness is a habit.",
   },
-  { name: "Flame Boxers", tag: "Apparel", img: "/img/products/underwear.webp" },
+  {
+    name: "Flame Boxers",
+    tag: "Apparel",
+    img: "/img/products/underwear.webp",
+    model: null,
+    saying: "The foundation.",
+  },
 ];
 ---
 
@@ -167,9 +214,14 @@ const products = [
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {
           products.map((p) => (
-            <article
+            <button
+              type="button"
               data-reveal
-              class="group relative overflow-hidden rounded-3xl border border-border bg-card/70 backdrop-blur-sm transition duration-300 hover:-translate-y-2 hover:border-primary/60 hover:shadow-[0_20px_60px_-20px_var(--brand-red)]"
+              class="product-card group relative block overflow-hidden rounded-3xl border border-border bg-card/70 text-left backdrop-blur-sm transition duration-300 hover:-translate-y-2 hover:border-primary/60 hover:shadow-[0_20px_60px_-20px_var(--brand-red)]"
+              data-name={p.name}
+              data-img={p.img}
+              data-model={p.model ?? ""}
+              data-saying={p.saying}
             >
               <div class="aspect-square overflow-hidden p-6">
                 <img
@@ -181,6 +233,11 @@ const products = [
                   loading="lazy"
                 />
               </div>
+              {p.model && (
+                <span class="absolute top-4 right-4 rounded-full bg-primary px-3 py-1 text-[10px] font-bold tracking-[0.15em] text-primary-foreground uppercase">
+                  360° View
+                </span>
+              )}
               <div class="flex items-center justify-between p-5">
                 <div>
                   <h3 class="text-lg font-bold">{p.name}</h3>
@@ -189,10 +246,10 @@ const products = [
                   </p>
                 </div>
                 <span class="rounded-full border border-primary/40 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-primary uppercase">
-                  Soon
+                  {p.model ? "Tap" : "Soon"}
                 </span>
               </div>
-            </article>
+            </button>
           ))
         }
       </div>
@@ -278,6 +335,123 @@ const products = [
       &copy; {year} B-BUCKETS. All rights reserved.
     </p>
   </footer>
+
+  {/* ---- Product 3D / detail popup ---- */}
+  <div
+    id="product-modal"
+    class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+  >
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" data-close></div>
+    <div
+      class="relative z-10 flex max-h-[90svh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-border bg-card"
+    >
+      <button
+        type="button"
+        data-close
+        aria-label="Close"
+        class="absolute top-3 right-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-background/70 text-xl text-foreground transition hover:bg-primary hover:text-primary-foreground"
+      >
+        &times;
+      </button>
+
+      <div class="bg-ember relative flex aspect-square items-center justify-center">
+        {/* @ts-ignore — model-viewer is a registered web component */}
+        <model-viewer
+          id="mv"
+          camera-controls
+          auto-rotate
+          auto-rotate-delay="0"
+          rotation-per-second="24deg"
+          shadow-intensity="1"
+          environment-image="neutral"
+          exposure="1.1"
+          class="h-full w-full"
+          style="display:none; --poster-color: transparent;"
+        >
+        </model-viewer>
+        <img
+          id="mv-img"
+          alt=""
+          class="max-h-full max-w-full object-contain p-8 drop-shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
+        />
+      </div>
+
+      <div class="p-6 text-center">
+        <h3 id="mv-name" class="text-2xl font-bold tracking-tight"></h3>
+        <p
+          id="mv-hint"
+          class="mt-1 text-xs tracking-[0.2em] text-muted-foreground uppercase"
+        >
+        </p>
+        <div
+          id="mv-secret"
+          class="mt-5 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3"
+        >
+          <p class="text-[10px] font-semibold tracking-[0.3em] text-primary uppercase">
+            🔒 Secret inside
+          </p>
+          <p id="mv-saying" class="text-fire mt-1 font-bold"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import "@google/model-viewer";
+
+    const modal = document.getElementById("product-modal")!;
+    const mv = document.getElementById("mv") as HTMLElement;
+    const mvImg = document.getElementById("mv-img") as HTMLImageElement;
+    const nameEl = document.getElementById("mv-name")!;
+    const hintEl = document.getElementById("mv-hint")!;
+    const secretEl = document.getElementById("mv-secret") as HTMLElement;
+    const sayingEl = document.getElementById("mv-saying")!;
+
+    function openModal(card: HTMLElement) {
+      const { name = "", img = "", model = "", saying = "" } = card.dataset;
+      nameEl.textContent = name;
+      if (model) {
+        mv.setAttribute("src", model);
+        mv.setAttribute("poster", img);
+        mv.style.display = "";
+        mvImg.style.display = "none";
+        hintEl.textContent = "Drag to spin • pinch to zoom";
+      } else {
+        mv.removeAttribute("src");
+        mv.style.display = "none";
+        mvImg.src = img;
+        mvImg.alt = name;
+        mvImg.style.display = "";
+        hintEl.textContent = "3D coming soon";
+      }
+      if (saying) {
+        sayingEl.textContent = saying;
+        secretEl.style.display = "";
+      } else {
+        secretEl.style.display = "none";
+      }
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      document.body.style.overflow = "";
+      mv.removeAttribute("src");
+    }
+
+    document
+      .querySelectorAll<HTMLElement>(".product-card")
+      .forEach((card) => card.addEventListener("click", () => openModal(card)));
+    modal
+      .querySelectorAll("[data-close]")
+      .forEach((b) => b.addEventListener("click", closeModal));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+  </script>
 
   {/* Scroll-reveal: reveal [data-reveal] elements as they enter the viewport. */}
   <script>
