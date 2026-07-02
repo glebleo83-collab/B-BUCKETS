@@ -19,71 +19,72 @@ const viewsOf = (front: string) =>
 // know your launch day — the countdown updates automatically.
 const DROP_DATE = "2026-08-08T10:00:00-07:00";
 
-// 🔧 EDIT ME: names are placeholders. `model` = 3D file (null until generated).
-// `saying` = the secret line revealed in the 3D popup.
+// 🔧 EDIT ME: names are placeholders. Each product has a hidden "secret"
+// sentence per colorway (revealed in the gallery popup). `tagName` swaps by
+// colorway too (Flame ↔ Frost).
 const products = [
   {
     name: "Flame Sneakers",
     tag: "Footwear",
     img: "/img/products/shoes.webp",
-    model: null,
-    saying: "Where greatness starts.",
+    sayingFire: "Where greatness starts.",
+    sayingIce: "Where the cold begins.",
   },
   {
     name: "Flame Hoodie",
     tag: "Apparel",
     img: "/img/products/hoodie.webp",
-    model: "/models/hoodie.glb",
-    saying: "This is not a hoodie. This is armor.",
+    sayingFire: "This is not a hoodie. This is armor.",
+    sayingIce: "Cold by choice.",
   },
   {
     name: "BB Ringer Tee",
     tag: "Apparel",
     img: "/img/products/tee.webp",
-    model: null,
-    saying: "Certified bucket-getter.",
+    sayingFire: "Certified bucket-getter.",
+    sayingIce: "Cold-blooded scorer.",
   },
   {
     name: "Flame Shorts",
     tag: "Apparel",
     img: "/img/products/shorts.webp",
-    model: null,
-    saying: "Legs of a legend.",
+    sayingFire: "Legs of a legend.",
+    sayingIce: "Freeze the competition.",
   },
   {
     name: "Flame Sweatpants",
     tag: "Apparel",
     img: "/img/products/sweatpants.webp",
-    model: null,
-    saying: "Comfort is earned.",
+    sayingFire: "Comfort is earned.",
+    sayingIce: "Zero degrees. Zero fear.",
   },
   {
     name: "BB Bucket Hat",
     tag: "Headwear",
     img: "/img/products/hat.webp",
-    model: null,
-    saying: "Crown of the G.O.A.T.",
+    sayingFire: "Crown of the G.O.A.T.",
+    sayingIce: "Cold-minded.",
   },
   {
     name: "Flame Socks",
     tag: "Apparel",
     img: "/img/products/socks.webp",
-    model: null,
-    saying: "Grounded greatness.",
+    sayingFire: "Grounded greatness.",
+    sayingIce: "Frozen footwork.",
   },
   {
     name: "BB Bracelets",
     tag: "Accessories",
     img: "/img/products/bracelets.webp",
-    model: null,
-    saying: "Greatness is a habit.",
+    sayingFire: "Greatness is a habit.",
+    sayingIce: "Iced out.",
   },
   {
     name: "Flame Boxers",
     tag: "Apparel",
     img: "/img/products/underwear.webp",
-    model: null,
-    saying: "The foundation.",
+    sayingFire: "The foundation.",
+    sayingIce: "Cold to the core.",
   },
 ];
 ---
@@ -257,6 +258,8 @@ const products = [
                 data-name={p.name}
                 data-views-fire={JSON.stringify(fireViews)}
                 data-views-ice={JSON.stringify(iceViews)}
+                data-saying-fire={p.sayingFire}
+                data-saying-ice={p.sayingIce}
               >
                 <div
                   class={`aspect-square overflow-hidden p-6 ${isShoe ? "shoe-bg" : "bg-white"}`}
@@ -419,6 +422,14 @@ const products = [
       <div class="mt-4 text-center">
         <h3 id="g-name" class="text-xl font-bold"></h3>
         <div id="g-dots" class="mt-3 flex justify-center gap-2"></div>
+        <div
+          class="mx-auto mt-4 max-w-xs rounded-2xl border border-border bg-card/60 px-4 py-3 backdrop-blur-sm"
+        >
+          <p class="text-[10px] font-semibold tracking-[0.3em] text-muted-foreground uppercase">
+            🔒 Secret inside
+          </p>
+          <p id="g-secret" class="mt-1 font-bold"></p>
+        </div>
       </div>
     </div>
   </div>
@@ -459,6 +470,7 @@ const products = [
     const gImg = document.getElementById("g-img") as HTMLImageElement;
     const gName = document.getElementById("g-name")!;
     const gDots = document.getElementById("g-dots")!;
+    const gSecret = document.getElementById("g-secret")!;
     let views: string[] = [];
     let idx = 0;
 
@@ -491,6 +503,13 @@ const products = [
       const isShoe = (views[0] || "").includes("shoes");
       gStage.style.background = bgFor(isShoe);
       gName.textContent = card.dataset.name || "";
+      const saying =
+        colorway === "ice"
+          ? card.dataset.sayingIce
+          : card.dataset.sayingFire;
+      gSecret.textContent = saying || "";
+      gSecret.className =
+        "mt-1 font-bold " + (colorway === "ice" ? "text-ice" : "text-fire");
       gDots.innerHTML = "";
       views.forEach((_, k) => {
         const dot = document.createElement("button");
