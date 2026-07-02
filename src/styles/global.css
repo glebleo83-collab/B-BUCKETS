@@ -140,6 +140,21 @@
   .fire-text-glow {
     text-shadow: 0 0 30px oklch(0.6 0.245 27 / 0.5);
   }
+  /* ICE colorway equivalents (deep royal blue / frost). */
+  .text-ice {
+    background-image: linear-gradient(
+      180deg,
+      #a9e0ff 0%,
+      #2f6bff 50%,
+      #0a2fa6 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .ice-text-glow {
+    text-shadow: 0 0 30px oklch(0.62 0.19 255 / 0.6);
+  }
   /* Radial ember wash, e.g. behind the mascot. */
   .bg-ember {
     background-image: radial-gradient(
@@ -162,6 +177,30 @@
 [data-reveal].is-visible {
   opacity: 1;
   transform: none;
+}
+
+/* ---- Fire / Ice colorway toggle ---- */
+.cw-btn {
+  color: var(--muted-foreground);
+}
+.cw-btn.on-fire {
+  background-color: var(--primary);
+  color: #fff;
+}
+.cw-btn.on-ice {
+  background-color: #1f52ff;
+  color: #fff;
+}
+/* In Ice mode, cool the fire-arena background to blue. */
+#gear.ice-mode .gear-bg {
+  filter: hue-rotate(200deg) saturate(1.15);
+}
+/* Shoes get a cool energy backdrop; everything else is white. */
+.shoe-bg {
+  background: radial-gradient(circle at 50% 62%, #7a1414 0%, #180909 78%);
+}
+#gear.ice-mode .shoe-bg {
+  background: radial-gradient(circle at 50% 62%, #14357a 0%, #060a1c 80%);
 }
 
 /* Gentle endless float for the mascot image. */

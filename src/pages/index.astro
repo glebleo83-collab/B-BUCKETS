@@ -1,9 +1,19 @@
 ---
+import { existsSync } from "node:fs";
 import Layout from "@/layouts/Layout.astro";
 import Hero from "@/components/Hero.tsx";
 import Countdown from "@/components/Countdown.tsx";
 
 const year = new Date().getFullYear();
+
+// Build a product's view list (front, back, side) from whichever image files
+// actually exist yet — so the gallery never points at a not-yet-generated shot.
+const viewsOf = (front: string) =>
+  [
+    front,
+    front.replace(".webp", "-back.webp"),
+    front.replace(".webp", "-side.webp"),
+  ].filter((p) => existsSync(`./public${p}`));
 
 // 🔧 EDIT ME: the real drop date/time (Pacific). Change this one line when you
 // know your launch day — the countdown updates automatically.
@@ -188,7 +198,7 @@ const products = [
       src="/img/hero/products-bg.webp"
       alt=""
       aria-hidden="true"
-      class="absolute inset-0 h-full w-full object-cover opacity-45"
+      class="gear-bg absolute inset-0 h-full w-full object-cover opacity-45 transition-[filter] duration-500"
       loading="lazy"
     />
     <div
@@ -196,7 +206,7 @@ const products = [
     >
     </div>
     <div class="relative mx-auto max-w-6xl">
-      <div class="mb-14 text-center">
+      <div class="mb-10 text-center">
         <p
           data-reveal
           class="mb-4 text-xs font-semibold tracking-[0.4em] text-primary uppercase"
@@ -207,50 +217,75 @@ const products = [
           data-reveal
           class="text-4xl font-extrabold tracking-tight sm:text-6xl"
         >
-          THE <span class="text-fire fire-text-glow">GEAR</span>
+          THE <span id="gear-accent" class="text-fire fire-text-glow">GEAR</span>
         </h2>
+
+        {/* Fire / Ice colorway toggle */}
+        <div
+          data-reveal
+          class="mx-auto mt-8 inline-flex items-center gap-1 rounded-full border border-border bg-card/60 p-1 backdrop-blur-sm"
+        >
+          <button
+            type="button"
+            id="cw-fire"
+            class="cw-btn rounded-full px-5 py-2 text-sm font-bold tracking-wide transition"
+          >
+            🔥 Fire
+          </button>
+          <button
+            type="button"
+            id="cw-ice"
+            class="cw-btn rounded-full px-5 py-2 text-sm font-bold tracking-wide transition"
+          >
+            🧊 Ice
+          </button>
+        </div>
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {
-          products.map((p) => (
-            <button
-              type="button"
-              data-reveal
-              class="product-card group relative block overflow-hidden rounded-3xl border border-border bg-card/70 text-left backdrop-blur-sm transition duration-300 hover:-translate-y-2 hover:border-primary/60 hover:shadow-[0_20px_60px_-20px_var(--brand-red)]"
-              data-name={p.name}
-              data-img={p.img}
-              data-model={p.model ?? ""}
-              data-saying={p.saying}
-            >
-              <div class="aspect-square overflow-hidden p-6">
-                <img
-                  src={p.img}
-                  alt={p.name}
-                  class="h-full w-full object-contain drop-shadow-[0_14px_30px_rgba(0,0,0,0.55)] transition duration-500 group-hover:scale-110"
-                  width="800"
-                  height="800"
-                  loading="lazy"
-                />
-              </div>
-              {p.model && (
-                <span class="absolute top-4 right-4 rounded-full bg-primary px-3 py-1 text-[10px] font-bold tracking-[0.15em] text-primary-foreground uppercase">
-                  360° View
-                </span>
-              )}
-              <div class="flex items-center justify-between p-5">
-                <div>
-                  <h3 class="text-lg font-bold">{p.name}</h3>
-                  <p class="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-                    {p.tag}
-                  </p>
+          products.map((p) => {
+            const iceFront = p.img.replace(".webp", "-ice.webp");
+            const fireViews = viewsOf(p.img);
+            const iceViews = viewsOf(iceFront);
+            const isShoe = p.img.includes("shoes");
+            return (
+              <button
+                type="button"
+                data-reveal
+                class="product-card group relative block overflow-hidden rounded-3xl border border-border bg-card/70 text-left backdrop-blur-sm transition duration-300 hover:-translate-y-2 hover:border-primary/60 hover:shadow-[0_20px_60px_-20px_var(--brand-red)]"
+                data-name={p.name}
+                data-views-fire={JSON.stringify(fireViews)}
+                data-views-ice={JSON.stringify(iceViews)}
+              >
+                <div
+                  class={`aspect-square overflow-hidden p-6 ${isShoe ? "shoe-bg" : "bg-white"}`}
+                >
+                  <img
+                    src={p.img}
+                    alt={p.name}
+                    data-fire={p.img}
+                    data-ice={iceFront}
+                    class="product-img h-full w-full object-contain drop-shadow-[0_10px_22px_rgba(0,0,0,0.25)] transition duration-500 group-hover:scale-110"
+                    width="800"
+                    height="800"
+                    loading="lazy"
+                  />
                 </div>
-                <span class="rounded-full border border-primary/40 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-primary uppercase">
-                  {p.model ? "Tap" : "Soon"}
-                </span>
-              </div>
-            </button>
-          ))
+                <div class="flex items-center justify-between p-5">
+                  <div>
+                    <h3 class="text-lg font-bold">{p.name}</h3>
+                    <p class="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                      {p.tag}
+                    </p>
+                  </div>
+                  <span class="rounded-full border border-primary/40 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-primary uppercase">
+                    3 views
+                  </span>
+                </div>
+              </button>
+            );
+          })
         }
       </div>
     </div>
@@ -336,120 +371,164 @@ const products = [
     </p>
   </footer>
 
-  {/* ---- Product 3D / detail popup ---- */}
+  {/* ---- Product 3-view gallery popup ---- */}
   <div
-    id="product-modal"
+    id="gallery"
     class="fixed inset-0 z-50 hidden items-center justify-center p-4"
   >
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" data-close></div>
     <div
-      class="relative z-10 flex max-h-[90svh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-border bg-card"
+      class="absolute inset-0 bg-black/85 backdrop-blur-sm"
+      data-gclose
     >
+    </div>
+    <div class="relative z-10 w-full max-w-xl">
       <button
         type="button"
-        data-close
+        data-gclose
         aria-label="Close"
-        class="absolute top-3 right-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-background/70 text-xl text-foreground transition hover:bg-primary hover:text-primary-foreground"
+        class="absolute -top-12 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-background/70 text-xl transition hover:bg-primary hover:text-primary-foreground"
       >
         &times;
       </button>
-
-      <div class="bg-ember relative flex aspect-square items-center justify-center">
-        {/* @ts-ignore — model-viewer is a registered web component */}
-        <model-viewer
-          id="mv"
-          camera-controls
-          auto-rotate
-          auto-rotate-delay="0"
-          rotation-per-second="24deg"
-          shadow-intensity="1"
-          environment-image="neutral"
-          exposure="1.1"
-          class="h-full w-full"
-          style="display:none; --poster-color: transparent;"
-        >
-        </model-viewer>
+      <div
+        id="g-stage"
+        class="relative flex aspect-square items-center justify-center overflow-hidden rounded-3xl border border-border"
+      >
         <img
-          id="mv-img"
+          id="g-img"
           alt=""
-          class="max-h-full max-w-full object-contain p-8 drop-shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
+          class="max-h-full max-w-full object-contain p-6 drop-shadow-[0_10px_22px_rgba(0,0,0,0.3)]"
         />
+        <button
+          type="button"
+          id="g-prev"
+          aria-label="Previous view"
+          class="absolute left-2 flex h-11 w-11 items-center justify-center rounded-full bg-background/70 text-2xl transition hover:bg-primary hover:text-primary-foreground"
+        >
+          &lsaquo;
+        </button>
+        <button
+          type="button"
+          id="g-next"
+          aria-label="Next view"
+          class="absolute right-2 flex h-11 w-11 items-center justify-center rounded-full bg-background/70 text-2xl transition hover:bg-primary hover:text-primary-foreground"
+        >
+          &rsaquo;
+        </button>
       </div>
-
-      <div class="p-6 text-center">
-        <h3 id="mv-name" class="text-2xl font-bold tracking-tight"></h3>
-        <p
-          id="mv-hint"
-          class="mt-1 text-xs tracking-[0.2em] text-muted-foreground uppercase"
-        >
-        </p>
-        <div
-          id="mv-secret"
-          class="mt-5 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3"
-        >
-          <p class="text-[10px] font-semibold tracking-[0.3em] text-primary uppercase">
-            🔒 Secret inside
-          </p>
-          <p id="mv-saying" class="text-fire mt-1 font-bold"></p>
-        </div>
+      <div class="mt-4 text-center">
+        <h3 id="g-name" class="text-xl font-bold"></h3>
+        <div id="g-dots" class="mt-3 flex justify-center gap-2"></div>
       </div>
     </div>
   </div>
 
+  {/* Fire / Ice colorway toggle + 3-view gallery */}
   <script>
-    import "@google/model-viewer";
+    const gear = document.getElementById("gear");
+    const accent = document.getElementById("gear-accent");
+    const fireBtn = document.getElementById("cw-fire");
+    const iceBtn = document.getElementById("cw-ice");
+    const imgs = document.querySelectorAll<HTMLImageElement>(".product-img");
+    const VIEW_LABELS = ["Front", "Back", "Side"];
 
-    const modal = document.getElementById("product-modal")!;
-    const mv = document.getElementById("mv") as HTMLElement;
-    const mvImg = document.getElementById("mv-img") as HTMLImageElement;
-    const nameEl = document.getElementById("mv-name")!;
-    const hintEl = document.getElementById("mv-hint")!;
-    const secretEl = document.getElementById("mv-secret") as HTMLElement;
-    const sayingEl = document.getElementById("mv-saying")!;
+    let colorway: "fire" | "ice" = "fire";
 
-    function openModal(card: HTMLElement) {
-      const { name = "", img = "", model = "", saying = "" } = card.dataset;
-      nameEl.textContent = name;
-      if (model) {
-        mv.setAttribute("src", model);
-        mv.setAttribute("poster", img);
-        mv.style.display = "";
-        mvImg.style.display = "none";
-        hintEl.textContent = "Drag to spin • pinch to zoom";
-      } else {
-        mv.removeAttribute("src");
-        mv.style.display = "none";
-        mvImg.src = img;
-        mvImg.alt = name;
-        mvImg.style.display = "";
-        hintEl.textContent = "3D coming soon";
+    function setColorway(mode: "fire" | "ice") {
+      colorway = mode;
+      const ice = mode === "ice";
+      imgs.forEach((img) => {
+        const next = ice ? img.dataset.ice : img.dataset.fire;
+        if (next) img.src = next;
+      });
+      gear?.classList.toggle("ice-mode", ice);
+      accent?.classList.toggle("text-fire", !ice);
+      accent?.classList.toggle("fire-text-glow", !ice);
+      accent?.classList.toggle("text-ice", ice);
+      accent?.classList.toggle("ice-text-glow", ice);
+      fireBtn?.classList.toggle("on-fire", !ice);
+      iceBtn?.classList.toggle("on-ice", ice);
+    }
+    fireBtn?.addEventListener("click", () => setColorway("fire"));
+    iceBtn?.addEventListener("click", () => setColorway("ice"));
+    setColorway("fire");
+
+    // ---- Gallery ----
+    const gallery = document.getElementById("gallery")!;
+    const gStage = document.getElementById("g-stage")!;
+    const gImg = document.getElementById("g-img") as HTMLImageElement;
+    const gName = document.getElementById("g-name")!;
+    const gDots = document.getElementById("g-dots")!;
+    let views: string[] = [];
+    let idx = 0;
+
+    function bgFor(isShoe: boolean) {
+      if (!isShoe) return "#ffffff";
+      return colorway === "ice"
+        ? "radial-gradient(circle at 50% 62%, #14357a 0%, #060a1c 80%)"
+        : "radial-gradient(circle at 50% 62%, #7a1414 0%, #180909 78%)";
+    }
+
+    function show(i: number) {
+      idx = (i + views.length) % views.length;
+      gImg.src = views[idx];
+      Array.from(gDots.children).forEach((d, k) =>
+        d.classList.toggle("bg-primary", k === idx),
+      );
+    }
+
+    function openGallery(card: HTMLElement) {
+      const raw =
+        colorway === "ice"
+          ? card.dataset.viewsIce
+          : card.dataset.viewsFire;
+      views = JSON.parse(raw || "[]");
+      if (views.length === 0) {
+        // Fallback to whatever the card is currently showing.
+        const cur = card.querySelector("img");
+        if (cur) views = [cur.src];
       }
-      if (saying) {
-        sayingEl.textContent = saying;
-        secretEl.style.display = "";
-      } else {
-        secretEl.style.display = "none";
-      }
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
+      const isShoe = (views[0] || "").includes("shoes");
+      gStage.style.background = bgFor(isShoe);
+      gName.textContent = card.dataset.name || "";
+      gDots.innerHTML = "";
+      views.forEach((_, k) => {
+        const dot = document.createElement("button");
+        dot.className =
+          "h-2.5 w-2.5 rounded-full border border-border transition";
+        dot.setAttribute("aria-label", VIEW_LABELS[k] || `View ${k + 1}`);
+        dot.addEventListener("click", () => show(k));
+        gDots.appendChild(dot);
+      });
+      show(0);
+      gallery.classList.remove("hidden");
+      gallery.classList.add("flex");
       document.body.style.overflow = "hidden";
     }
 
-    function closeModal() {
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
+    function closeGallery() {
+      gallery.classList.add("hidden");
+      gallery.classList.remove("flex");
       document.body.style.overflow = "";
-      mv.removeAttribute("src");
     }
 
     document
       .querySelectorAll<HTMLElement>(".product-card")
-      .forEach((card) => card.addEventListener("click", () => openModal(card)));
-    modal
-      .querySelectorAll("[data-close]")
-      .forEach((b) => b.addEventListener("click", closeModal));
+      .forEach((c) => c.addEventListener("click", () => openGallery(c)));
+    document
+      .getElementById("g-prev")
+      ?.addEventListener("click", () => show(idx - 1));
+    document
+      .getElementById("g-next")
+      ?.addEventListener("click", () => show(idx + 1));
+    gallery
+      .querySelectorAll("[data-gclose]")
+      .forEach((b) => b.addEventListener("click", closeGallery));
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
+      if (gallery.classList.contains("hidden")) return;
+      if (e.key === "Escape") closeGallery();
+      if (e.key === "ArrowLeft") show(idx - 1);
+      if (e.key === "ArrowRight") show(idx + 1);
     });
   </script>
 
