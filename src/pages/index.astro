@@ -103,10 +103,28 @@ const products = [
         height="32"
       />
     </a>
-    <nav class="flex items-center gap-6 text-xs font-semibold tracking-[0.2em] uppercase">
-      <a href="#goat" class="hidden text-muted-foreground transition hover:text-foreground sm:inline">The G.O.A.T.</a>
+    <nav class="flex items-center gap-4 text-xs font-semibold tracking-[0.2em] uppercase sm:gap-6">
       <a href="#gear" class="hidden text-muted-foreground transition hover:text-foreground sm:inline">The Gear</a>
-      <a href="#drop" class="text-primary transition hover:brightness-110">The Drop &darr;</a>
+      <a href="#drop" class="hidden text-primary transition hover:brightness-110 sm:inline">The Drop &darr;</a>
+      {/* Site-wide Fire / Ice switch */}
+      <div class="inline-flex items-center gap-0.5 rounded-full border border-border bg-card/60 p-0.5 backdrop-blur-sm">
+        <button
+          type="button"
+          data-cw="fire"
+          aria-label="Fire theme"
+          class="cw-btn rounded-full px-3 py-1.5 text-xs font-bold transition"
+        >
+          🔥
+        </button>
+        <button
+          type="button"
+          data-cw="ice"
+          aria-label="Ice theme"
+          class="cw-btn rounded-full px-3 py-1.5 text-xs font-bold transition"
+        >
+          🧊
+        </button>
+      </div>
     </nav>
   </header>
 
@@ -156,8 +174,11 @@ const products = [
       <div data-reveal class="relative flex justify-center">
         <img
           src="/img/brand/goat-color.webp"
-          alt="The B-BUCKETS mascot — a goat in red and black flame B-BUCKETS gear holding a basketball"
-          class="animate-float relative w-[280px] drop-shadow-2xl sm:w-[360px]"
+          alt="The B-BUCKETS mascot — a goat in B-BUCKETS gear holding a basketball"
+          data-fire="/img/brand/goat-color.webp"
+          data-ice="/img/brand/goat-color-ice.webp"
+          onerror="this.src='/img/brand/goat-color.webp'"
+          class="theme-img animate-float relative w-[280px] drop-shadow-2xl sm:w-[360px]"
           width="360"
           height="540"
           loading="lazy"
@@ -228,19 +249,28 @@ const products = [
         >
           <button
             type="button"
-            id="cw-fire"
+            data-cw="fire"
             class="cw-btn rounded-full px-5 py-2 text-sm font-bold tracking-wide transition"
           >
             🔥 Fire
           </button>
           <button
             type="button"
-            id="cw-ice"
+            data-cw="ice"
             class="cw-btn rounded-full px-5 py-2 text-sm font-bold tracking-wide transition"
           >
             🧊 Ice
           </button>
         </div>
+
+        {/* The collection name switches with the colorway. */}
+        <p
+          data-reveal
+          class="mt-6 text-xs font-semibold tracking-[0.4em] uppercase"
+        >
+          <span class="text-muted-foreground">The drop:</span>
+          <span id="drop-name" class="text-fire fire-text-glow"></span>
+        </p>
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -436,32 +466,32 @@ const products = [
 
   {/* Fire / Ice colorway toggle + 3-view gallery */}
   <script>
-    const gear = document.getElementById("gear");
-    const accent = document.getElementById("gear-accent");
-    const fireBtn = document.getElementById("cw-fire");
-    const iceBtn = document.getElementById("cw-ice");
-    const imgs = document.querySelectorAll<HTMLImageElement>(".product-img");
+    const imgs = document.querySelectorAll<HTMLImageElement>(
+      ".product-img, .theme-img",
+    );
+    const fireBtns = document.querySelectorAll<HTMLElement>('[data-cw="fire"]');
+    const iceBtns = document.querySelectorAll<HTMLElement>('[data-cw="ice"]');
+    const dropName = document.getElementById("drop-name");
     const VIEW_LABELS = ["Front", "Back", "Side"];
+    const DROP_NAMES = { fire: "HEAT CHECK", ice: "ICE IN MY VEINS" };
 
     let colorway: "fire" | "ice" = "fire";
 
     function setColorway(mode: "fire" | "ice") {
       colorway = mode;
       const ice = mode === "ice";
+      // The whole site flips red <-> blue via this one class on <html>.
+      document.documentElement.classList.toggle("theme-ice", ice);
       imgs.forEach((img) => {
         const next = ice ? img.dataset.ice : img.dataset.fire;
         if (next) img.src = next;
       });
-      gear?.classList.toggle("ice-mode", ice);
-      accent?.classList.toggle("text-fire", !ice);
-      accent?.classList.toggle("fire-text-glow", !ice);
-      accent?.classList.toggle("text-ice", ice);
-      accent?.classList.toggle("ice-text-glow", ice);
-      fireBtn?.classList.toggle("on-fire", !ice);
-      iceBtn?.classList.toggle("on-ice", ice);
+      if (dropName) dropName.textContent = DROP_NAMES[mode];
+      fireBtns.forEach((b) => b.classList.toggle("on-fire", !ice));
+      iceBtns.forEach((b) => b.classList.toggle("on-ice", ice));
     }
-    fireBtn?.addEventListener("click", () => setColorway("fire"));
-    iceBtn?.addEventListener("click", () => setColorway("ice"));
+    fireBtns.forEach((b) => b.addEventListener("click", () => setColorway("fire")));
+    iceBtns.forEach((b) => b.addEventListener("click", () => setColorway("ice")));
     setColorway("fire");
 
     // ---- Gallery ----
