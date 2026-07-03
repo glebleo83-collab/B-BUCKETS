@@ -363,12 +363,18 @@ const products = [
     >
       <source src="/img/hero/goat-action.mp4" type="video/mp4" />
     </video>
-    <img
-      src="/img/hero/ice-scene.webp"
-      alt="The B-BUCKETS goat shooting in a snowy ice arena"
+    <video
       class="action-ice h-[60svh] w-full object-cover sm:h-[80svh]"
-      loading="lazy"
-    />
+      poster="/img/hero/ice-scene.webp"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-label="The B-BUCKETS goat shooting in a snowy ice arena"
+    >
+      <source src="/img/hero/ice-action.mp4" type="video/mp4" />
+    </video>
     <div
       class="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60"
     >

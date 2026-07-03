@@ -32,7 +32,7 @@ export default function Hero() {
       </video>
       {/* Snowy still shown only in Ice mode (CSS handles the swap). */}
       <img
-        src="/img/hero/ice-scene.webp"
+        src="/img/hero/hero-scene-ice.webp"
         alt=""
         aria-hidden="true"
         className="hero-ice absolute inset-0 h-full w-full object-cover"
