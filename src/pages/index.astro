@@ -19,6 +19,16 @@ const viewsOf = (front: string) =>
 // know your launch day — the countdown updates automatically.
 const DROP_DATE = "2026-08-08T10:00:00-07:00";
 
+// Snowflakes for Ice mode — spread deterministically (no randomness) so the
+// static build is stable.
+const snow = Array.from({ length: 26 }, (_, i) => ({
+  left: (i * 3.9) % 100,
+  size: 3 + (i % 4),
+  dur: 6 + (i % 6) * 1.4,
+  delay: (i % 9) * 0.8,
+  drift: (i % 2 ? 1 : -1) * (12 + (i % 3) * 10),
+}));
+
 // 🔧 EDIT ME: names are placeholders. Each product has a hidden "secret"
 // sentence per colorway (revealed in the gallery popup). `tagName` swaps by
 // colorway too (Flame ↔ Frost).
@@ -129,6 +139,22 @@ const products = [
   </header>
 
   <span id="top"></span>
+
+  {/* Falling snow — CSS reveals this only when the site is in Ice mode. */}
+  <div
+    id="snow"
+    class="pointer-events-none fixed inset-0 z-30 overflow-hidden"
+    aria-hidden="true"
+  >
+    {
+      snow.map((f) => (
+        <span
+          class="snowflake"
+          style={`left:${f.left}%; width:${f.size}px; height:${f.size}px; animation-duration:${f.dur}s; animation-delay:${f.delay}s; --drift:${f.drift}px;`}
+        />
+      ))
+    }
+  </div>
 
   {/* ---- Hero ---- */}
   <Hero client:load />
@@ -279,7 +305,6 @@ const products = [
             const iceFront = p.img.replace(".webp", "-ice.webp");
             const fireViews = viewsOf(p.img);
             const iceViews = viewsOf(iceFront);
-            const isShoe = p.img.includes("shoes");
             return (
               <button
                 type="button"
@@ -292,7 +317,7 @@ const products = [
                 data-saying-ice={p.sayingIce}
               >
                 <div
-                  class={`aspect-square overflow-hidden p-6 ${isShoe ? "shoe-bg" : "bg-white"}`}
+                  class="aspect-square overflow-hidden bg-white p-6"
                 >
                   <img
                     src={p.img}
@@ -326,12 +351,18 @@ const products = [
 
   {/* ---- The G.O.A.T. in action (animated) ---- */}
   <section class="relative overflow-hidden">
-    <img
-      src="/img/hero/goat-action-still.webp"
-      alt="The B-BUCKETS goat in a basketball shooting motion"
+    <video
       class="goat-still h-[60svh] w-full object-cover sm:h-[80svh]"
-      loading="lazy"
-    />
+      poster="/img/hero/goat-action.webp"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-label="The B-BUCKETS goat mascot shooting a basketball"
+    >
+      <source src="/img/hero/goat-action.mp4" type="video/mp4" />
+    </video>
     <div
       class="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60"
     >
@@ -498,13 +529,6 @@ const products = [
     let views: string[] = [];
     let idx = 0;
 
-    function bgFor(isShoe: boolean) {
-      if (!isShoe) return "#ffffff";
-      return colorway === "ice"
-        ? "radial-gradient(circle at 50% 62%, #14357a 0%, #060a1c 80%)"
-        : "radial-gradient(circle at 50% 62%, #7a1414 0%, #180909 78%)";
-    }
-
     function show(i: number) {
       idx = (i + views.length) % views.length;
       gImg.src = views[idx];
@@ -524,8 +548,7 @@ const products = [
         const cur = card.querySelector("img");
         if (cur) views = [cur.src];
       }
-      const isShoe = (views[0] || "").includes("shoes");
-      gStage.style.background = bgFor(isShoe);
+      gStage.style.background = "#ffffff";
       gName.textContent = card.dataset.name || "";
       const saying =
         colorway === "ice"
