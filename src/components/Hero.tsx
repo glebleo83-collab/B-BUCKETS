@@ -19,7 +19,7 @@ export default function Hero() {
     <section className="relative flex min-h-[100svh] items-center overflow-hidden">
       {/* ---- Background: video if present, the still as poster otherwise ---- */}
       <video
-        className="absolute inset-0 h-full w-full object-cover"
+        className="hero-fire absolute inset-0 h-full w-full object-cover"
         poster="/img/hero/hero-scene.webp"
         autoPlay
         muted
@@ -30,6 +30,13 @@ export default function Hero() {
       >
         <source src="/img/hero/hero.mp4" type="video/mp4" />
       </video>
+      {/* Snowy still shown only in Ice mode (CSS handles the swap). */}
+      <img
+        src="/img/hero/ice-scene.webp"
+        alt=""
+        aria-hidden="true"
+        className="hero-ice absolute inset-0 h-full w-full object-cover"
+      />
 
       {/* Dark scrim so the headline stays readable over the flames. */}
       <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-background/20" />

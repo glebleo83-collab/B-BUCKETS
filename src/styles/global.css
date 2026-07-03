@@ -306,6 +306,19 @@
 .theme-ice .animate-ember {
   display: none;
 }
+/* In Ice mode, hide the fiery videos and show the snowy still scene instead. */
+.hero-ice,
+.action-ice {
+  display: none;
+}
+.theme-ice .hero-fire,
+.theme-ice .action-fire {
+  display: none;
+}
+.theme-ice .hero-ice,
+.theme-ice .action-ice {
+  display: block;
+}
 
 /* Rising ember particle. */
 @keyframes bb-ember {
