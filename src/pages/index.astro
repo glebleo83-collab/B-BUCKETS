@@ -326,18 +326,12 @@ const products = [
 
   {/* ---- The G.O.A.T. in action (animated) ---- */}
   <section class="relative overflow-hidden">
-    <video
-      class="h-[60svh] w-full object-cover sm:h-[80svh]"
-      poster="/img/hero/goat-action.webp"
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="metadata"
-      aria-label="The B-BUCKETS goat shooting a basketball"
-    >
-      <source src="/img/hero/goat-action.mp4" type="video/mp4" />
-    </video>
+    <img
+      src="/img/hero/goat-action-still.webp"
+      alt="The B-BUCKETS goat in a basketball shooting motion"
+      class="goat-still h-[60svh] w-full object-cover sm:h-[80svh]"
+      loading="lazy"
+    />
     <div
       class="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60"
     >

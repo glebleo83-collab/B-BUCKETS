@@ -252,6 +252,7 @@
 }
 /* Cool the fiery hero + goat videos and the products backdrop to blue. */
 .theme-ice video,
+.theme-ice .goat-still,
 .theme-ice .gear-bg {
   filter: hue-rotate(205deg) saturate(1.1);
 }
