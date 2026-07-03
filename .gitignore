@@ -30,5 +30,9 @@ npm-debug.log*
 !.vscode/extensions.json
 .idea/
 
-# raw working images (kept on disk, not deployed)
+# raw working images (kept on disk, not deployed — moved out of public/ so they never ship)
+/_source/
 public/img/_source/
+
+# local deploy logs
+deploy.log
