@@ -250,9 +250,9 @@
     transparent 62%
   );
 }
-/* Cool the fiery hero + goat videos and the products backdrop to blue. */
-.theme-ice video,
-.theme-ice .goat-still,
+/* Cool the products fire-arena backdrop to blue in Ice mode. The ice hero/
+   action media are already blue, so they must NOT be hue-rotated (that turned
+   them gold). The fiery videos are hidden in Ice mode, so nothing else needs it. */
 .theme-ice .gear-bg {
   filter: hue-rotate(205deg) saturate(1.1);
 }
