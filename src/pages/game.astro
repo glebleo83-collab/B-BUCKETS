@@ -1,0 +1,928 @@
+---
+/*
+  B-BUCKETS — "BUCKETS" mini game (Telegram Mini App, Stage 1)
+  ------------------------------------------------------------
+  A shoot-hoops arcade game. Drag the ball back like a slingshot and let go to
+  shoot. Score as many buckets as you can in 30 seconds. At the end you get a
+  discount code to type into the store at checkout, plus a button to challenge
+  a friend on Telegram.
+
+  This page is a normal web page — Telegram just opens it full-screen inside the
+  app. It reuses the site's brand: the G.O.A.T. mascot, Space Grotesk font, and
+  the Fire (red) / Ice (blue) theme.
+
+  Stage 2 (later) adds: a worldwide leaderboard, one-time tracked codes, and
+  early-access unlocks — those need a small database, so they come next.
+*/
+import "@/styles/global.css";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>B-BUCKETS — Buckets Game</title>
+    <!-- Telegram Mini App SDK. Loads only inside Telegram; the game also runs
+         fine in a normal browser for testing (we guard every Telegram call). -->
+    <script is:inline src="https://telegram.org/js/telegram-web-app.js"></script>
+  </head>
+  <body class="overflow-hidden select-none">
+    <!-- The whole game lives in this fixed, full-screen box. -->
+    <main id="app" class="fixed inset-0 overflow-hidden touch-none">
+      <!-- The court, ball, hoop and mascot are all drawn on this canvas. -->
+      <canvas id="game" class="absolute inset-0 h-full w-full"></canvas>
+
+      <!-- Score + timer shown on top of the canvas as crisp HTML text. -->
+      <div
+        id="hud"
+        class="pointer-events-none absolute inset-x-0 top-0 z-10 hidden items-start justify-between p-5"
+      >
+        <div class="rounded-2xl border border-border bg-card/60 px-4 py-2 backdrop-blur-sm">
+          <div class="text-xs tracking-widest text-muted-foreground">SCORE</div>
+          <div id="score" class="text-fire fire-text-glow text-3xl font-extrabold leading-none">0</div>
+        </div>
+        <div class="rounded-2xl border border-border bg-card/60 px-4 py-2 text-right backdrop-blur-sm">
+          <div class="text-xs tracking-widest text-muted-foreground">TIME</div>
+          <div id="time" class="text-3xl font-extrabold leading-none">30</div>
+        </div>
+      </div>
+
+      <!-- Fire / Ice theme toggle, matching the main site. -->
+      <button
+        id="themeToggle"
+        aria-label="Toggle Fire / Ice theme"
+        class="absolute right-4 bottom-4 z-10 grid h-11 w-11 place-items-center rounded-full border border-border bg-card/70 text-xl backdrop-blur-sm transition active:scale-95"
+      >🔥</button>
+
+      <!-- START screen -->
+      <div
+        id="startScreen"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 bg-background/70 p-8 text-center backdrop-blur-sm"
+      >
+        <img src="/img/brand/logo-transparent.png" alt="B-BUCKETS" class="h-14 w-auto opacity-90" />
+        <div>
+          <h1 class="text-fire fire-text-glow text-5xl font-extrabold tracking-tight sm:text-6xl">BUCKETS</h1>
+          <p class="mt-3 max-w-xs text-muted-foreground">
+            Drag the ball back and let go to shoot. Score as many as you can in
+            <span class="text-foreground font-semibold">30 seconds</span> — the
+            better you play, the bigger your discount.
+          </p>
+        </div>
+        <button
+          id="startBtn"
+          class="fire-glow rounded-full bg-primary px-10 py-4 text-lg font-bold text-white transition active:scale-95"
+        >PLAY</button>
+        <p id="bestLine" class="text-sm text-muted-foreground"></p>
+      </div>
+
+      <!-- GAME OVER screen -->
+      <div
+        id="overScreen"
+        class="absolute inset-0 z-20 hidden flex-col items-center justify-center gap-5 bg-background/80 p-8 text-center backdrop-blur-sm"
+      >
+        <h2 class="text-2xl font-bold text-muted-foreground">TIME&rsquo;S UP</h2>
+        <div>
+          <div class="text-xs tracking-widest text-muted-foreground">YOU SCORED</div>
+          <div id="finalScore" class="text-fire fire-text-glow text-7xl font-extrabold leading-none">0</div>
+          <div id="finalBest" class="mt-1 text-sm text-muted-foreground"></div>
+        </div>
+
+        <!-- The reward: a discount code to type in at checkout. -->
+        <div class="w-full max-w-xs rounded-2xl border border-primary/50 bg-card/70 p-4 backdrop-blur-sm">
+          <div class="text-xs tracking-widest text-muted-foreground">YOUR DISCOUNT CODE</div>
+          <button
+            id="codeBtn"
+            class="mt-1 w-full text-3xl font-extrabold tracking-wider text-foreground transition active:scale-95"
+          >—</button>
+          <div id="codeDesc" class="text-sm text-primary"></div>
+          <div id="copiedMsg" class="mt-1 h-4 text-xs text-muted-foreground">tap the code to copy</div>
+        </div>
+
+        <div class="flex w-full max-w-xs flex-col gap-3">
+          <button
+            id="shareBtn"
+            class="rounded-full bg-primary px-6 py-3 font-bold text-white transition active:scale-95"
+          >🏀 Challenge a friend</button>
+          <a
+            id="shopBtn"
+            href="https://b-buckets.com"
+            target="_blank"
+            rel="noopener"
+            class="rounded-full border border-border bg-card/60 px-6 py-3 font-semibold text-foreground backdrop-blur-sm transition active:scale-95"
+          >Shop the drop &rarr;</a>
+          <button
+            id="againBtn"
+            class="text-sm text-muted-foreground underline underline-offset-4"
+          >Play again</button>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // ====================================================================
+      //  B-BUCKETS "BUCKETS" GAME  —  vanilla JavaScript on a <canvas>
+      // ====================================================================
+
+      // ---- Telegram Mini App setup (safe if we're just in a browser) ------
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        try {
+          tg.setHeaderColor("#150a0a");
+          tg.setBackgroundColor("#150a0a");
+        } catch {}
+      }
+      // Little helper: buzz the phone (only works inside Telegram).
+      const haptic = (type: "light" | "medium" | "heavy" | "success" = "light") => {
+        try {
+          if (type === "success") tg?.HapticFeedback?.notificationOccurred("success");
+          else tg?.HapticFeedback?.impactOccurred(type);
+        } catch {}
+      };
+
+      // ---- Grab the HTML pieces -------------------------------------------
+      const canvas = document.getElementById("game") as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d")!;
+      const scoreEl = document.getElementById("score")!;
+      const timeEl = document.getElementById("time")!;
+      const hud = document.getElementById("hud")!;
+      const startScreen = document.getElementById("startScreen")!;
+      const overScreen = document.getElementById("overScreen")!;
+      const startBtn = document.getElementById("startBtn")!;
+      const againBtn = document.getElementById("againBtn")!;
+      const finalScore = document.getElementById("finalScore")!;
+      const finalBest = document.getElementById("finalBest")!;
+      const bestLine = document.getElementById("bestLine")!;
+      const codeBtn = document.getElementById("codeBtn")!;
+      const codeDesc = document.getElementById("codeDesc")!;
+      const copiedMsg = document.getElementById("copiedMsg")!;
+      const shareBtn = document.getElementById("shareBtn")!;
+      const themeToggle = document.getElementById("themeToggle")!;
+
+      // ---- Load the mascot images (fire + ice versions) -------------------
+      const goatFire = new Image();
+      goatFire.src = "/img/brand/goat-color.webp";
+      const goatIce = new Image();
+      goatIce.src = "/img/brand/goat-color-ice.webp";
+
+      // ---- Canvas sizing (handles retina screens so it looks sharp) -------
+      let W = 0,
+        H = 0;
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = Math.floor(W * dpr);
+        canvas.height = Math.floor(H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        layoutCourt();
+      }
+      window.addEventListener("resize", resize);
+
+      // ---- Sizes that depend on the screen (set in layoutCourt) -----------
+      let R = 22; // ball radius
+      let rimHalf = 34; // half the width of the hoop rim
+      let ballRestX = 0,
+        ballRestY = 0; // where the ball waits before a shot
+      let hoop = { x: 0, y: 0 }; // centre of the rim
+      function layoutCourt() {
+        R = Math.max(16, Math.min(W, H) * 0.045);
+        rimHalf = R * 1.85; // a bit wider so shots are more forgiving
+        ballRestX = W * 0.5;
+        // Sit the ball higher up so there's room to see the shot arc.
+        ballRestY = H * 0.66;
+        // First hoop position (upper area). moveHoop() changes it after makes.
+        if (hoop.x === 0) moveHoop();
+      }
+      // Put the hoop somewhere new (adds variety after each make).
+      function moveHoop() {
+        hoop.x = W * (0.32 + Math.random() * 0.5);
+        hoop.y = H * (0.26 + Math.random() * 0.16);
+      }
+
+      // ---- Game state -----------------------------------------------------
+      const GRAVITY = 2100; // pixels per second squared — the ball's "weight"
+      const FIXED_DT = 1 / 60; // fixed physics step, so the ball flies the SAME
+      // on every device AND exactly matches the aim-preview line (WYSIWYG).
+      const GAME_SECONDS = 30;
+      let state: "start" | "playing" | "over" = "start";
+      let score = 0;
+      let timeLeft = GAME_SECONDS;
+
+      // The ball: where it is, how fast it moves, and what it's doing.
+      const ball = {
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        phase: "ready" as "ready" | "flying" | "dead",
+        scored: false,
+        prevY: 0,
+      };
+      function resetBall() {
+        ball.x = ballRestX;
+        ball.y = ballRestY;
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.phase = "ready";
+        ball.scored = false;
+        ball.prevY = ball.y;
+        trail = [];
+        ballAngle = 0;
+      }
+
+      // Aiming (the slingshot drag).
+      let aiming = false;
+      let aimStart = { x: 0, y: 0 }; // where the finger first pressed
+      let aimNow = { x: 0, y: 0 }; // where the finger is now
+      const LAUNCH_POWER = 5.4; // turns drag distance into launch speed
+      const MAX_PULL = 260; // longest useful drag (caps the power)
+
+      // Floating text popups (e.g. "SWISH!") when you score.
+      let pops: { x: number; y: number; life: number; text: string }[] = [];
+
+      // ---- Animation + effects state --------------------------------------
+      let elapsed = 0; // seconds since load — drives idle animations
+      let celebrate = 0; // >0 (seconds) while the goat celebrates a make
+      let ballAngle = 0; // ball spin, so it looks like it's rolling
+      let trail: { x: number; y: number }[] = []; // motion trail while flying
+      let emberAcc = 0; // spawn timer for ambient particles
+      // Ambient embers (fire) or snow (ice) drifting in the arena.
+      let embers: { x: number; y: number; vx: number; vy: number; r: number; a: number }[] = [];
+      // Confetti burst that pops when you score.
+      let bursts: { x: number; y: number; vx: number; vy: number; life: number }[] = [];
+      // Expanding rings — a whoosh on the shot and a flash on a make.
+      let flashes: { x: number; y: number; r: number; vr: number; life: number }[] = [];
+      let shake = 0; // screen-shake timer after a make
+      let netSwing = 0; // net ripple timer after a make
+
+      // ---- Input: press, drag, release (mouse + touch) --------------------
+      function pointerPos(e: PointerEvent) {
+        const r = canvas.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+      canvas.addEventListener("pointerdown", (e) => {
+        if (state !== "playing" || ball.phase !== "ready") return;
+        aiming = true;
+        aimStart = pointerPos(e);
+        aimNow = { ...aimStart };
+        canvas.setPointerCapture(e.pointerId);
+      });
+      canvas.addEventListener("pointermove", (e) => {
+        if (!aiming) return;
+        aimNow = pointerPos(e);
+      });
+      function releaseShot() {
+        if (!aiming) return;
+        aiming = false;
+        // Pull vector = from current finger back to the start. Pulling DOWN and
+        // BACK flings the ball UP and FORWARD, like a slingshot.
+        let dx = aimStart.x - aimNow.x;
+        let dy = aimStart.y - aimNow.y;
+        const pull = Math.hypot(dx, dy);
+        if (pull < 12) return; // a tiny tap isn't a real shot
+        const capped = Math.min(pull, MAX_PULL) / pull;
+        ball.vx = dx * capped * LAUNCH_POWER;
+        ball.vy = dy * capped * LAUNCH_POWER;
+        ball.phase = "flying";
+        ball.scored = false;
+        ball.prevY = ball.y;
+        // Whoosh ring at the launch point — the "cool shot" animation.
+        flashes.push({ x: ball.x, y: ball.y, r: R, vr: 260, life: 0.7 });
+        haptic("medium");
+      }
+      canvas.addEventListener("pointerup", releaseShot);
+      canvas.addEventListener("pointercancel", releaseShot);
+
+      // ---- The physics + scoring, run every frame -------------------------
+      function update(dt: number) {
+        if (ball.phase !== "flying") return;
+        ball.prevY = ball.y;
+        ball.vy += GRAVITY * dt;
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+        ballAngle += ball.vx * dt * 0.02; // spin in the direction it's moving
+        trail.push({ x: ball.x, y: ball.y });
+        if (trail.length > 9) trail.shift();
+
+        // --- Score check: ball dropping through the rim from above ---------
+        if (
+          !ball.scored &&
+          ball.vy > 0 &&
+          ball.prevY < hoop.y &&
+          ball.y >= hoop.y &&
+          Math.abs(ball.x - hoop.x) < rimHalf * 0.92
+        ) {
+          ball.scored = true;
+          score += 1;
+          scoreEl.textContent = String(score);
+          // ---- Cool "make" animation --------------------------------------
+          pops.push({ x: hoop.x, y: hoop.y, life: 1, text: "SWISH!" });
+          celebrate = 0.85; // goat hops + glows
+          shake = 0.32; // screen shake
+          netSwing = 1; // net ripples
+          flashes.push({ x: hoop.x, y: hoop.y, r: rimHalf, vr: 340, life: 1 }); // rim flash ring
+          for (let k = 0; k < 22; k++) {
+            const a = Math.random() * Math.PI * 2;
+            const sp = 70 + Math.random() * 190;
+            bursts.push({
+              x: hoop.x,
+              y: hoop.y,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp - 60,
+              life: 1,
+            });
+          }
+          haptic("success");
+          moveHoop(); // jump the hoop somewhere new for the next shot
+        }
+
+        // --- Bounce off the two rim edges (so near-misses feel real) -------
+        for (const nodeX of [hoop.x - rimHalf, hoop.x + rimHalf]) {
+          const ddx = ball.x - nodeX;
+          const ddy = ball.y - hoop.y;
+          const d = Math.hypot(ddx, ddy);
+          if (d < R + 4 && d > 0.0001) {
+            const nx = ddx / d,
+              ny = ddy / d;
+            // push the ball out of the rim node
+            ball.x = nodeX + nx * (R + 4);
+            ball.y = hoop.y + ny * (R + 4);
+            // reflect its velocity, losing some energy
+            const dot = ball.vx * nx + ball.vy * ny;
+            ball.vx = (ball.vx - 2 * dot * nx) * 0.55;
+            ball.vy = (ball.vy - 2 * dot * ny) * 0.55;
+          }
+        }
+
+        // --- Side walls: gentle bounce so the ball stays in play ----------
+        if (ball.x < R) {
+          ball.x = R;
+          ball.vx = Math.abs(ball.vx) * 0.6;
+        } else if (ball.x > W - R) {
+          ball.x = W - R;
+          ball.vx = -Math.abs(ball.vx) * 0.6;
+        }
+
+        // --- Gone off the bottom (missed) → new ball after a beat ---------
+        if (ball.y > H + R * 2) {
+          ball.phase = "dead";
+          setTimeout(resetBall, 350);
+        }
+      }
+
+      // ---- Drawing --------------------------------------------------------
+      function isIce() {
+        return document.documentElement.classList.contains("theme-ice");
+      }
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        const ice = isIce();
+        const ballCol = ice ? "#eaf4ff" : "#ffb27a";
+        const ballCol2 = ice ? "#7fb0ff" : "#d24a17";
+        const netCol = ice ? "#bcd8ff" : "#ffd7c2";
+
+        // Screen shake on a make — offset everything by a tiny random jitter.
+        ctx.save();
+        if (shake > 0) {
+          const s = (shake / 0.32) * 9;
+          ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
+        }
+
+        drawBackground(); // arena: spotlight, 3D floor, vignette
+        drawEmbers(); // drifting embers / snow
+
+        drawMascot(); // the goat, bobbing (and hopping on a make)
+
+        drawHoop(netCol, ice);
+
+        // Aim guide + trajectory preview while dragging
+        if (aiming) drawAim();
+
+        // Ball floor-shadow (adds 3D depth) — hidden once the ball is gone
+        if (ball.phase !== "dead") {
+          const groundY = H * 0.9;
+          const above = Math.max(0, Math.min(1, (groundY - ball.y) / (H * 0.5)));
+          ctx.globalAlpha = 0.3 * (1 - above * 0.65);
+          ctx.fillStyle = "#000";
+          ctx.beginPath();
+          ctx.ellipse(ball.x, groundY, R * (1.15 - above * 0.5), R * 0.3 * (1 - above * 0.3), 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+
+        // Motion trail behind the flying ball
+        if (ball.phase === "flying") {
+          for (let i = 0; i < trail.length; i++) {
+            const t = i / trail.length;
+            ctx.globalAlpha = t * 0.3;
+            ctx.fillStyle = ballCol;
+            ctx.beginPath();
+            ctx.arc(trail[i].x, trail[i].y, R * (0.35 + t * 0.5), 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        }
+
+        // The ball (spinning, shaded, glossy)
+        drawBall(ball.x, ball.y, ballAngle, ballCol, ballCol2);
+
+        drawBursts(); // score confetti on top
+        drawFlashes(); // whoosh / swish rings
+
+        // Floating "SWISH!" popups
+        for (const p of pops) {
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fillStyle = ice ? "#8fc0ff" : "#ff6a45";
+          const sz = 30 + (1 - p.life) * 18; // grows as it floats up
+          ctx.font = `900 ${sz}px 'Space Grotesk Variable', sans-serif`;
+          ctx.textAlign = "center";
+          ctx.fillText(p.text, p.x, p.y - (1 - p.life) * 70);
+          ctx.globalAlpha = 1;
+        }
+
+        ctx.restore(); // end screen-shake transform
+      }
+
+      function drawFlashes() {
+        const ice = isIce();
+        for (const f of flashes) {
+          ctx.globalAlpha = Math.max(0, f.life);
+          ctx.strokeStyle = ice ? "#dff0ff" : "#ffe0a0";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawHoop(netCol: string, ice: boolean) {
+        const x = hoop.x,
+          y = hoop.y;
+        const rimFront = ice ? "#8fc0ff" : "#ff7a3d"; // bright front of the rim
+        const rimBack = ice ? "#4b78c9" : "#c2461f"; // shaded back of the rim
+        const boardEdge = ice ? "#3f7bff" : "#ec1c24";
+        const ry = rimHalf * 0.34; // how "squashed" the rim ellipse looks (perspective)
+
+        // --- Backboard (glass panel with a shooter's square) ---------------
+        const bbW = rimHalf * 2.3,
+          bbH = rimHalf * 2.1;
+        const bbTop = y - ry - bbH - 4;
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        ctx.strokeStyle = boardEdge;
+        ctx.lineWidth = 5;
+        roundRect(x - bbW / 2, bbTop, bbW, bbH, 6);
+        ctx.fill();
+        ctx.stroke();
+        // Inner "shooter's square" target box
+        const sqW = rimHalf * 0.95,
+          sqH = rimHalf * 0.8;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = ice ? "#8fc0ff" : "#ff7a3d";
+        roundRect(x - sqW / 2, y - ry - 8 - sqH, sqW, sqH, 3);
+        ctx.stroke();
+        // Little bracket that joins the rim to the backboard
+        ctx.strokeStyle = rimBack;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(x, bbTop + bbH);
+        ctx.lineTo(x, y - ry);
+        ctx.stroke();
+
+        // --- Back half of the rim (drawn first, sits behind the net) -------
+        ctx.strokeStyle = rimBack;
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        ctx.ellipse(x, y, rimHalf, ry, 0, Math.PI, Math.PI * 2);
+        ctx.stroke();
+
+        // --- Net (mesh hanging from the rim: strands + rings) --------------
+        const depth = rimHalf * 1.5;
+        const botHalf = rimHalf * 0.5;
+        const botRy = ry * 0.5;
+        ctx.strokeStyle = netCol;
+        ctx.lineWidth = 1.4;
+        // How far the net swings sideways right now (0 when resting).
+        const sway = Math.sin(elapsed * 22) * netSwing * 12;
+        const strands = 10;
+        // vertical strands, fanning inward toward the bottom
+        for (let i = 0; i < strands; i++) {
+          const a = (i / strands) * Math.PI * 2;
+          const tX = x + Math.cos(a) * rimHalf;
+          const tY = y + Math.sin(a) * ry;
+          const bX = x + Math.cos(a) * botHalf + sway;
+          const bY = y + depth + Math.sin(a) * botRy;
+          ctx.beginPath();
+          ctx.moveTo(tX, tY);
+          ctx.lineTo(bX, bY);
+          ctx.stroke();
+        }
+        // horizontal rings to complete the mesh (they sway more toward the bottom)
+        const rings = 4;
+        for (let r = 1; r <= rings; r++) {
+          const t = r / rings;
+          const rHalf = rimHalf + (botHalf - rimHalf) * t;
+          const rry = ry + (botRy - ry) * t;
+          ctx.beginPath();
+          ctx.ellipse(x + sway * t, y + depth * t, rHalf, rry, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // --- Front half of the rim (drawn last, in front of the net) ------
+        ctx.strokeStyle = rimFront;
+        ctx.lineWidth = 7;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.ellipse(x, y, rimHalf, ry, 0, 0, Math.PI);
+        ctx.stroke();
+        ctx.lineCap = "butt";
+      }
+
+      // Rounded-rectangle path helper (older canvases lack ctx.roundRect).
+      function roundRect(x: number, y: number, w: number, h: number, r: number) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      function drawBall(x: number, y: number, angle: number, c1: string, c2: string) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        // Body: radial gradient lit from the top-left, dark at the edge = round.
+        const g = ctx.createRadialGradient(-R * 0.35, -R * 0.35, R * 0.15, 0, 0, R);
+        g.addColorStop(0, c1);
+        g.addColorStop(0.7, c2);
+        g.addColorStop(1, "rgba(0,0,0,0.45)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, R, 0, Math.PI * 2);
+        ctx.fill();
+        // Seams (these spin with the ball, selling the roll).
+        ctx.strokeStyle = "rgba(30,12,4,0.55)";
+        ctx.lineWidth = Math.max(1.4, R * 0.08);
+        ctx.beginPath();
+        ctx.moveTo(0, -R);
+        ctx.lineTo(0, R); // vertical seam
+        ctx.moveTo(-R, 0);
+        ctx.lineTo(R, 0); // horizontal seam
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(0, 0, R * 0.55, R, 0, 0, Math.PI * 2); // curved side seam
+        ctx.stroke();
+        ctx.restore();
+        // Glossy highlight — stays put (light doesn't spin with the ball).
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.beginPath();
+        ctx.ellipse(x - R * 0.34, y - R * 0.4, R * 0.24, R * 0.15, -0.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // ---- Arena background: spotlight + 3D perspective court + vignette ---
+      function drawBackground() {
+        const ice = isIce();
+        // Spotlight glow behind the hoop.
+        const sg = ctx.createRadialGradient(hoop.x, hoop.y, 8, hoop.x, hoop.y, Math.max(W, H) * 0.55);
+        sg.addColorStop(0, ice ? "rgba(90,150,255,0.22)" : "rgba(255,95,55,0.22)");
+        sg.addColorStop(1, "transparent");
+        ctx.fillStyle = sg;
+        ctx.fillRect(0, 0, W, H);
+
+        // Perspective floor — lines that converge toward a vanishing point.
+        const horizon = H * 0.6;
+        const fg = ctx.createLinearGradient(0, horizon, 0, H);
+        fg.addColorStop(0, ice ? "rgba(20,45,90,0.5)" : "rgba(60,22,14,0.55)");
+        fg.addColorStop(1, ice ? "rgba(6,14,32,0.9)" : "rgba(18,8,6,0.92)");
+        ctx.fillStyle = fg;
+        ctx.fillRect(0, horizon, W, H - horizon);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, horizon, W, H - horizon);
+        ctx.clip();
+        ctx.strokeStyle = ice ? "rgba(130,180,255,0.14)" : "rgba(255,120,80,0.14)";
+        ctx.lineWidth = 2;
+        for (let i = -7; i <= 7; i++) {
+          const bx = W * 0.5 + i * (W * 0.14);
+          ctx.beginPath();
+          ctx.moveTo(W * 0.5, horizon);
+          ctx.lineTo(bx, H + 4);
+          ctx.stroke();
+        }
+        for (let j = 1; j <= 6; j++) {
+          const t = j / 6;
+          const yy = horizon + (H - horizon) * (t * t); // rows bunch up in the distance
+          ctx.beginPath();
+          ctx.moveTo(0, yy);
+          ctx.lineTo(W, yy);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // Vignette to focus the eye on the action.
+        const vg = ctx.createRadialGradient(W / 2, H * 0.42, Math.min(W, H) * 0.28, W / 2, H * 0.5, Math.max(W, H) * 0.75);
+        vg.addColorStop(0, "transparent");
+        vg.addColorStop(1, ice ? "rgba(2,6,16,0.55)" : "rgba(8,3,2,0.55)");
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      function drawEmbers() {
+        const ice = isIce();
+        for (const e of embers) {
+          ctx.globalAlpha = Math.max(0, Math.min(0.9, e.a));
+          ctx.fillStyle = ice ? "#dfefff" : "#ff7a3d";
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawBursts() {
+        const ice = isIce();
+        for (const b of bursts) {
+          ctx.globalAlpha = Math.max(0, b.life);
+          ctx.fillStyle = ice ? "#8fc0ff" : "#ffd15a";
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // The mascot: idle bob, plus a hop + glow burst whenever you score.
+      function drawMascot() {
+        const ice = isIce();
+        const goat = ice ? goatIce : goatFire;
+        if (!goat.complete || !goat.naturalWidth) return;
+        const gw = Math.min(W * 0.42, 300);
+        const gh = gw * (goat.naturalHeight / goat.naturalWidth);
+        const baseX = W - gw * 0.5 - W * 0.02; // mascot's centre x
+        const baseY = H - 6; // feet near the bottom
+        const bob = Math.sin(elapsed * 2.2) * 6;
+        let lift = 0,
+          scale = 1,
+          tilt = 0;
+        if (celebrate > 0) {
+          const p = celebrate / 0.85; // 1 → 0 over the celebration
+          const hop = Math.sin((1 - p) * Math.PI); // 0 → 1 → 0
+          lift = hop * 46;
+          scale = 1 + hop * 0.12;
+          tilt = Math.sin(elapsed * 26) * 0.06 * p;
+        }
+        ctx.save();
+        ctx.translate(baseX, baseY - bob - lift);
+        ctx.rotate(tilt);
+        ctx.scale(scale, scale);
+        if (celebrate > 0) {
+          ctx.shadowColor = ice ? "rgba(120,180,255,0.9)" : "rgba(255,120,60,0.9)";
+          ctx.shadowBlur = 40;
+        }
+        ctx.globalAlpha = 0.97;
+        ctx.drawImage(goat, -gw / 2, -gh, gw, gh);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      }
+
+      // Advance all the animation timers + particles (runs every frame).
+      function updateEffects(dt: number) {
+        elapsed += dt;
+        if (celebrate > 0) celebrate = Math.max(0, celebrate - dt);
+
+        const ice = isIce();
+        emberAcc += dt;
+        while (emberAcc >= 0.09) {
+          emberAcc -= 0.09;
+          if (embers.length < 40) {
+            if (ice) {
+              // snow falls from the top
+              embers.push({ x: Math.random() * W, y: -10, vx: (Math.random() - 0.5) * 20, vy: 30 + Math.random() * 40, r: 1.5 + Math.random() * 2.5, a: 0.8 });
+            } else {
+              // embers rise from the bottom
+              embers.push({ x: Math.random() * W, y: H + 10, vx: (Math.random() - 0.5) * 24, vy: -(40 + Math.random() * 70), r: 1.5 + Math.random() * 2.5, a: 0.9 });
+            }
+          }
+        }
+        for (const e of embers) {
+          e.x += e.vx * dt;
+          e.y += e.vy * dt;
+          e.a -= dt * 0.16;
+        }
+        embers = embers.filter((e) => e.a > 0 && e.y > -30 && e.y < H + 30);
+
+        for (const b of bursts) {
+          b.vy += 520 * dt; // gravity on confetti
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+          b.life -= dt * 1.6;
+        }
+        bursts = bursts.filter((b) => b.life > 0);
+
+        for (const f of flashes) {
+          f.r += f.vr * dt; // ring expands outward
+          f.life -= dt * 2.2;
+        }
+        flashes = flashes.filter((f) => f.life > 0);
+
+        if (shake > 0) shake = Math.max(0, shake - dt);
+        if (netSwing > 0) netSwing = Math.max(0, netSwing - dt * 1.4);
+      }
+
+      function drawAim() {
+        // The slingshot band — from the ball back to your finger.
+        ctx.strokeStyle = isIce() ? "#7fb4ff" : "#ff6a45";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([2, 8]);
+        ctx.beginPath();
+        ctx.moveTo(aimNow.x, aimNow.y);
+        ctx.lineTo(ball.x, ball.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const dx = aimStart.x - aimNow.x;
+        const dy = aimStart.y - aimNow.y;
+        const pull = Math.hypot(dx, dy);
+        if (pull < 10) return;
+        const capped = Math.min(pull, MAX_PULL) / pull;
+
+        // Simulate the REAL flight with the SAME step + physics the game uses,
+        // so wherever the dots go is exactly where the ball goes. If the path
+        // drops through the rim, the whole line turns green.
+        let px = ball.x,
+          py = ball.y,
+          pvx = dx * capped * LAUNCH_POWER,
+          pvy = dy * capped * LAUNCH_POWER;
+        const pts: { x: number; y: number }[] = [];
+        let willScore = false;
+        for (let i = 0; i < 160; i++) {
+          const prevY = py;
+          pvy += GRAVITY * FIXED_DT;
+          px += pvx * FIXED_DT;
+          py += pvy * FIXED_DT;
+          if (pvy > 0 && prevY < hoop.y && py >= hoop.y && Math.abs(px - hoop.x) < rimHalf * 0.92) {
+            willScore = true;
+          }
+          if (i % 2 === 0) pts.push({ x: px, y: py });
+          if (px < -20 || px > W + 20 || py > H + 20) break;
+        }
+        ctx.fillStyle = willScore ? "#39d98a" : "rgba(255,255,255,0.55)";
+        for (const pt of pts) {
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, willScore ? 4 : 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // ---- Main loop ------------------------------------------------------
+      let last = performance.now();
+      let acc = 0; // accumulates real time for the 1-second countdown
+      let physicsAcc = 0; // accumulates real time for the fixed physics step
+      function loop(now: number) {
+        const dt = Math.min((now - last) / 1000, 0.05);
+        last = now;
+
+        updateEffects(dt); // animations run on every screen, not just in-game
+
+        if (state === "playing") {
+          // Step the ball physics in fixed 1/60s chunks (deterministic flight).
+          physicsAcc += dt;
+          let steps = 0;
+          while (physicsAcc >= FIXED_DT && steps < 5) {
+            update(FIXED_DT);
+            physicsAcc -= FIXED_DT;
+            steps++;
+          }
+          // Age the popups
+          for (const p of pops) p.life -= dt * 1.4;
+          pops = pops.filter((p) => p.life > 0);
+          // Countdown timer
+          acc += dt;
+          if (acc >= 1) {
+            acc -= 1;
+            timeLeft -= 1;
+            timeEl.textContent = String(Math.max(0, timeLeft));
+            if (timeLeft <= 0) endGame();
+          }
+        }
+
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      // ---- Start / end ----------------------------------------------------
+      function startGame() {
+        score = 0;
+        timeLeft = GAME_SECONDS;
+        acc = 0;
+        physicsAcc = 0;
+        pops = [];
+        bursts = [];
+        flashes = [];
+        celebrate = 0;
+        shake = 0;
+        netSwing = 0;
+        scoreEl.textContent = "0";
+        timeEl.textContent = String(GAME_SECONDS);
+        moveHoop();
+        resetBall();
+        state = "playing";
+        startScreen.classList.add("hidden");
+        overScreen.classList.remove("flex");
+        overScreen.classList.add("hidden");
+        hud.classList.remove("hidden");
+        hud.classList.add("flex");
+      }
+
+      // Best score saved on THIS phone (no login needed for Stage 1).
+      function getBest() {
+        return Number(localStorage.getItem("bb_best") || 0);
+      }
+
+      // Pick the discount code based on how many buckets you scored.
+      function rewardFor(n: number) {
+        if (n >= 20) return { code: "GOAT15", desc: "15% off — certified G.O.A.T." };
+        if (n >= 10) return { code: "BUCKETS10", desc: "10% off — bucket-getter" };
+        return { code: "BUCKETS5", desc: "5% off — nice start" };
+      }
+
+      function endGame() {
+        state = "over";
+        const best = getBest();
+        if (score > best) localStorage.setItem("bb_best", String(score));
+        const newBest = Math.max(best, score);
+
+        finalScore.textContent = String(score);
+        finalBest.textContent =
+          score > best ? "🔥 New best!" : `Best: ${newBest}`;
+
+        const reward = rewardFor(score);
+        codeBtn.textContent = reward.code;
+        codeDesc.textContent = reward.desc;
+        copiedMsg.textContent = "tap the code to copy";
+        (codeBtn as any).dataset.code = reward.code;
+
+        hud.classList.add("hidden");
+        overScreen.classList.remove("hidden");
+        overScreen.classList.add("flex");
+        haptic("success");
+      }
+
+      // ---- Buttons --------------------------------------------------------
+      startBtn.addEventListener("click", startGame);
+      againBtn.addEventListener("click", startGame);
+
+      // Copy the discount code to the clipboard.
+      codeBtn.addEventListener("click", async () => {
+        const code = (codeBtn as any).dataset.code || "";
+        try {
+          await navigator.clipboard.writeText(code);
+          copiedMsg.textContent = "copied! ✓";
+        } catch {
+          copiedMsg.textContent = "code: " + code;
+        }
+      });
+
+      // Share to a Telegram chat to challenge a friend.
+      shareBtn.addEventListener("click", () => {
+        const url = "https://b-buckets.com/game";
+        const text = `I just scored ${score} buckets on B-BUCKETS 🐐🏀 Can you beat me?`;
+        const share =
+          "https://t.me/share/url?url=" +
+          encodeURIComponent(url) +
+          "&text=" +
+          encodeURIComponent(text);
+        if (tg?.openTelegramLink) tg.openTelegramLink(share);
+        else window.open(share, "_blank");
+      });
+
+      // Fire / Ice toggle (flips the whole page theme, like the main site).
+      themeToggle.addEventListener("click", () => {
+        const ice = document.documentElement.classList.toggle("theme-ice");
+        themeToggle.textContent = ice ? "🧊" : "🔥";
+        try {
+          tg?.setHeaderColor(ice ? "#0a1524" : "#150a0a");
+          tg?.setBackgroundColor(ice ? "#0a1524" : "#150a0a");
+        } catch {}
+      });
+
+      // ---- Boot -----------------------------------------------------------
+      resize();
+      resetBall();
+      bestLine.textContent = getBest() ? `Your best: ${getBest()} buckets` : "";
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>
