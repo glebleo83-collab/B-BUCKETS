@@ -2,7 +2,7 @@
 # Our site is *static* (just HTML/CSS/images in the `dist` folder after building),
 # so this is an "assets-only" Worker — it has no code to run, it just serves files.
 # The Cloudflare build does:  npm run build  ->  npx wrangler deploy
-name = "b-buckets"
+name = "b-bucketss"
 compatibility_date = "2024-11-01"
 
 # Serve the site on the real domain. `custom_domain = true` tells Cloudflare to
